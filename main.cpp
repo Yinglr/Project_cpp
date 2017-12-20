@@ -1,14 +1,13 @@
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <vector>
 #include "bilu.hpp"
 
 int main(int argc, char* argv[])
 {
     
-	std::cout << "bonjour les bonobos" << std::endl;
-	
-	
-	
+
 	
 	return 0;
 }
