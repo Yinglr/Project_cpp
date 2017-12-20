@@ -22,9 +22,8 @@ endif()
 
 set(STL_SRCS
     main.cpp
-    vector_utils.cpp
-    additional_exercises.cpp)
+	bilu.cpp)
 
-set(STL_TARGET stl_practice)
+set(STL_TARGET project_cpp)
 add_executable(${STL_TARGET} ${STL_SRCS})
 
