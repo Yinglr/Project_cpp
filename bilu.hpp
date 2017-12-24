@@ -13,12 +13,20 @@
 #include <vector>
 #include <ctime>
 #include <cmath>
+#include <tuple>
+
+
+bool operator==(const std::tm& lhs, const std::tm& rhs);
+
 
 namespace project
 {
 	// TIMES SERIES
 	namespace TS
 	{
+		struct std::tm to_date(const std::string & strdate);
+		
+		
 		struct time_point
 		{
 			size_t index=0;
@@ -32,7 +40,7 @@ namespace project
 		
 			// constructors
 			time_series(std::string name, std::size_t size);
-			
+			time_series(std::string name, std::ifstream& csv_file);
 			
 			// import data
 			void load_from_csv(std::ifstream& csv_file);
@@ -45,7 +53,12 @@ namespace project
 			// access - values
 			double operator[](std::size_t line) const;
 			double operator[](std::string date) const;
-			// double operator[](std::tm date) const;
+			double operator[](std::tm date) const;
+			
+			std::size_t get_index(std::string date) const;
+			std::size_t get_index(struct std::tm tm) const;
+			
+			
 			time_point get_line(std::size_t line) const;
 
 			

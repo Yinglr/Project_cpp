@@ -1,5 +1,10 @@
 #include "bilu.hpp"
 
+bool operator==(const std::tm& lhs, const std::tm& rhs)
+{
+	return std::tie(lhs.tm_year, lhs.tm_mon, lhs.tm_mday) ==
+		   std::tie(rhs.tm_year, rhs.tm_mon, rhs.tm_mday);
+}
 
 namespace project
 {
@@ -10,11 +15,31 @@ namespace project
 	
 	namespace TS
 	{
+		// string to date function
+		struct std::tm to_date(const std::string& strdate)
+		{
+			struct std::tm dt;
+			std::istringstream datestream(strdate);
+			datestream >> std::get_time(&dt, "%d/%m/%Y");
+			return dt;
+		}
+		
+		
+
+		
 		// constructors
 		time_series::time_series(std::string name, std::size_t size)
 			: m_name(name), m_dates(size), m_values(size)
 		{}
 		
+		time_series::time_series(std::string name, std::ifstream& csv_file)
+			: m_name(name)
+		{
+			std::size_t size = csv::count_lines(csv_file);
+			m_dates.resize(size); 
+			m_values.resize(size);
+			load_from_csv(csv_file);
+		}
 		
 		// import data
 		void time_series::load_from_csv(std::ifstream& csv_file)
@@ -30,8 +55,8 @@ namespace project
 				else
 				{
 					std::string date, value; // temporary storages
-					struct std::tm dt; // for the date
 					std::size_t i = 0;
+					
 					while(csv_file.good())
 					{
 						std::getline(csv_file, date, ';');
@@ -41,9 +66,8 @@ namespace project
 							// storing the date
 							if(i==0) // first date has some additionnal characters
 								date = date.substr(3);
-							std::istringstream datestream(date);
-							datestream >> std::get_time(&dt, "%d/%m/%Y");
-							m_dates[i] = dt;
+							
+							m_dates[i] = to_date(date);
 							// storing the value
 							m_values[i] = std::atof(value.c_str());
 							i++;
@@ -85,15 +109,52 @@ namespace project
 		// by date as a string
 		double time_series::operator[](std::string date) const
 		{
-			struct std::tm dt;
-			std::istringstream datestream(date);
-			datestream >> std::get_time(&dt, "%d/%m/%Y");
-			auto pos = std::find(std::begin(m_dates), std::end(m_dates), dt);
-			double index = std::distance(std::begin(m_dates), pos);
-			return index;
+			std::size_t line(get_index(date));
+			if(is_line(line))
+			{
+				return m_values[line-1];
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		
+		// by date as a tm
+		double time_series::operator[](std::tm date) const
+		{
+			std::size_t line(get_index(date));
+			if(is_line(line))
+			{
+				return m_values[line-1];
+			}
+			else
+			{
+				return 0;
+			}
 		}
 		
 		
+		
+		std::size_t time_series::get_index(std::string date) const
+		{
+			return get_index(to_date(date));
+		}
+		
+		std::size_t time_series::get_index(struct std::tm tm) const
+		{
+			auto pos = std::find(m_dates.cbegin(), m_dates.cend(), tm);
+			std::size_t index = std::distance(m_dates.cbegin(), pos) + 1;
+			if(is_line(index))
+			{
+				return index;
+			}
+			else
+			{
+				std::cout << "Error: date not found" << std::endl;
+				return 0;
+			}
+		} 
 		
 		// useless atm
 		time_point time_series::get_line(std::size_t line) const
@@ -134,7 +195,7 @@ namespace project
 		// check line
 		bool time_series::is_line(std::size_t line) const
 		{
-			if(line > get_size())
+			if((line > get_size()) || (line <= 0))
 			{
 				std::cout << "Error: call out of bounds of time_series object " << m_name << std::endl;
 				return false;
