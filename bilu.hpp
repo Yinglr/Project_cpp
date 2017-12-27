@@ -4,27 +4,33 @@
 // libs of the project
 
 #include <algorithm>
-#include <iterator>
-#include <iostream>
-#include <iomanip>
+#include <cmath>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <numeric>
 #include <sstream>
 #include <string>
-#include <vector>
-#include <ctime>
-#include <cmath>
 #include <tuple>
+#include <vector>
 
-
+// for comparing times in iterators
 bool operator==(const std::tm& lhs, const std::tm& rhs);
 
 
 namespace project
 {
+	
+	/* ---------------------------------- */
+	/* ---- MANIPULATING TIME SERIES ---- */
+	/* ---------------------------------- */
+	
 	// TIMES SERIES
 	namespace TS
 	{
-		struct std::tm to_date(const std::string & strdate);
+		struct std::tm to_date(const std::string& strdate);
 		
 		
 		struct time_point
@@ -42,6 +48,9 @@ namespace project
 			time_series(std::string name, std::size_t size);
 			time_series(std::string name, std::ifstream& csv_file);
 			
+			// destructor
+			~time_series();
+			
 			// import data
 			void load_from_csv(std::ifstream& csv_file);
 			
@@ -53,22 +62,24 @@ namespace project
 			// access - values
 			double operator[](std::size_t line) const;
 			double operator[](std::string date) const;
-			double operator[](std::tm date) const;
+			double operator[](struct std::tm date) const;
 			
 			std::size_t get_index(std::string date) const;
 			std::size_t get_index(struct std::tm tm) const;
 			
-			
+			// useless
 			time_point get_line(std::size_t line) const;
 
 			
 			// printing info
 			void print_line(std::size_t line) const;
-			void time_series::print() const;
+			void print_data() const;
+			void print_info() const;
 			
 			
-			
-			// void print_info() const;
+			// modify - general
+			void let_name(std::string name);
+		
 		
 		private:
 			
@@ -76,7 +87,6 @@ namespace project
 			std::string m_name;
 			std::vector<std::tm> m_dates;
 			std::vector<double> m_values;
-			
 			
 			// check line
 			bool is_line(std::size_t line) const;
@@ -87,7 +97,9 @@ namespace project
 	
 	
 	
-	
+	/* -------------------------------- */
+	/* ---- MANIPULATING CSV FILES ---- */
+	/* -------------------------------- */
 	
 	// CSV FILES
 	namespace csv

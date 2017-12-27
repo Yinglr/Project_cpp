@@ -1,5 +1,7 @@
 #include "bilu.hpp"
+#include "functions.hpp"
 
+// for comparing times in iterators
 bool operator==(const std::tm& lhs, const std::tm& rhs)
 {
 	return std::tie(lhs.tm_year, lhs.tm_mon, lhs.tm_mday) ==
@@ -39,6 +41,12 @@ namespace project
 			m_dates.resize(size); 
 			m_values.resize(size);
 			load_from_csv(csv_file);
+		}
+		
+		//destructor
+		time_series::~time_series()
+		{
+			std::cout << "Deletion of time_series object " << get_name() << std::endl;
 		}
 		
 		// import data
@@ -121,7 +129,7 @@ namespace project
 		}
 		
 		// by date as a tm
-		double time_series::operator[](std::tm date) const
+		double time_series::operator[](struct std::tm date) const
 		{
 			std::size_t line(get_index(date));
 			if(is_line(line))
@@ -184,11 +192,39 @@ namespace project
 			}
 		}
 		
-		void time_series::print() const
+		void time_series::print_data() const
 		{
 			for(std::size_t i=1;i<=get_size();++i)
 				print_line(i);
 		}
+		
+		void time_series::print_info() const
+		{
+			std::cout << std::endl;
+			std::cout << "----------------------------------" << std::endl;
+			std::cout << "General info on time_series object " << m_name << std::endl;
+			std::cout << "----------------------------------" << std::endl;
+			std::cout << "Number of elements: " << get_size() << std::endl;
+			std::cout << "Date range: " << std::put_time(&m_dates[0], "%d/%m/%Y") << " - "
+						<< std::put_time(&m_dates[get_size()-1], "%d/%m/%Y") << std::endl;
+			std::cout << "Values range: " << *std::min_element(m_values.cbegin(), m_values.cend()) << " - "
+						<< *std::max_element(m_values.cbegin(), m_values.cend()) << std::endl;
+			std::cout << "Values average: " << std::accumulate(m_values.cbegin(), m_values.cend(), 0.0) / get_size() << std::endl;
+			std::cout << "----------------------------------" << std::endl;
+			std::cout << std::endl;
+		}
+		
+		
+		// modify - general
+		void time_series::let_name(std::string name)
+		{
+			std::cout << "time_series object " << m_name << " renamed " << name << std::endl;
+			m_name = name;
+		}
+		
+		
+		
+		
 		
 		
 		

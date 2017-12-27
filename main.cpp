@@ -1,4 +1,5 @@
 #include "bilu.hpp"
+#include "functions.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -19,6 +20,11 @@ int main(int argc, char* argv[])
 	
 	// close the data file
 	data_file.close();
+	
+	data.let_name("bilo");
+	std::cout << data.get_name() << " - " << data.get_size() << std::endl;
+	
+	data.print_info();
 	
 	return 0;
 }
