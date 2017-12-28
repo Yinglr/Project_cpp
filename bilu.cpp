@@ -1,12 +1,55 @@
 #include "bilu.hpp"
 #include "functions.hpp"
 
+	/* -------------------------------- */
+	/* ---- MANIPULATING STRUCT TM ---- */
+	/* -------------------------------- */
+
 // for comparing times in iterators
-bool operator==(const std::tm& lhs, const std::tm& rhs)
+bool operator==(const struct std::tm& lhs, const struct std::tm& rhs)
 {
 	return std::tie(lhs.tm_year, lhs.tm_mon, lhs.tm_mday) ==
 		   std::tie(rhs.tm_year, rhs.tm_mon, rhs.tm_mday);
 }
+
+bool operator>(struct std::tm& lhs, struct std::tm& rhs)
+{
+	return (std::difftime(lhs, rhs) > 0);
+}
+
+bool operator<(struct std::tm& lhs, struct std::tm& rhs)
+{
+	return (std::difftime(lhs, rhs) < 0);
+}
+
+bool operator>=(struct std::tm& lhs, struct std::tm& rhs)
+{
+	return ((lhs == rhs) | (lhs > rhs));
+}
+
+bool operator<=(struct std::tm& lhs, struct std::tm& rhs)
+{
+	return ((lhs == rhs) | (lhs < rhs));
+}
+
+
+namespace std
+{
+	double difftime(struct std::tm& time_end, struct std::tm& time_beg)
+	{
+		return difftime(std::mktime(&time_end), std::mktime(&time_beg));
+	}
+	
+	double difftime(const std::string& time_end, const std::string& time_beg)
+	{
+		return difftime(project::TS::to_date(time_end), project::TS::to_date(time_beg));
+	}
+}
+
+
+
+
+
 
 namespace project
 {
@@ -23,6 +66,10 @@ namespace project
 			struct std::tm dt;
 			std::istringstream datestream(strdate);
 			datestream >> std::get_time(&dt, "%d/%m/%Y");
+			// necessary sets to zero so mktime works
+			dt.tm_sec = 0;
+			dt.tm_min = 0;
+			dt.tm_hour = 0;
 			return dt;
 		}
 		
@@ -30,11 +77,11 @@ namespace project
 
 		
 		// constructors
-		time_series::time_series(std::string name, std::size_t size)
+		time_series::time_series(const std::string& name, std::size_t size)
 			: m_name(name), m_dates(size), m_values(size)
 		{}
 		
-		time_series::time_series(std::string name, std::ifstream& csv_file)
+		time_series::time_series(const std::string& name, std::ifstream& csv_file)
 			: m_name(name)
 		{
 			std::size_t size = csv::count_lines(csv_file);
@@ -96,6 +143,16 @@ namespace project
 		std::size_t time_series::get_size() const
 		{
 			return m_dates.size();
+		}
+		
+		struct std::tm time_series::date_start() const
+		{
+			return m_dates[0];
+		}
+		
+		struct std::tm time_series::date_end() const
+		{
+			return m_dates[get_size()-1];
 		}
 		
 		
@@ -164,6 +221,74 @@ namespace project
 			}
 		} 
 		
+		
+		// returns the closest value (next value / previous value)
+		std::size_t time_series::approx_index(std::string date, bool next) const
+		{
+			return approx_index(to_date(date), next);
+		}		
+		
+		std::size_t time_series::approx_index(struct std::tm tm, bool next) const
+		{
+			// non-converging cases
+			if( ((next == true) & (tm > date_end())) | ((next == false) & (tm < date_start())) )
+			{
+				std::cout << "Error: call out of bounds of time_series object " << m_name << std::endl;
+				return 0;
+			}
+			
+			// extreme cases
+			if(tm > date_end())
+				return get_size();
+			if(tm < date_start())
+				return 1;
+			
+			// general code
+			int incr = next ? 1 : -1;
+			while(get_index(tm) == 0)
+				tm.tm_mday += incr;
+			return get_index(tm);
+		}
+		
+		
+		
+		// returns the index n months before / after
+		std::size_t time_series::shift_months(std::size_t line, int n, bool after, bool next) const
+		{
+			return shift_months(m_dates[line-1], n, after, next);
+		}
+		
+		std::size_t time_series::shift_months(std::string date, int n, bool after, bool next) const
+		{
+			return shift_months(to_date(date), n, after, next);
+		}
+		
+		std::size_t time_series::shift_months(struct std::tm tm, int n, bool after, bool next) const
+		{
+			int incr = after ? 1 : -1;
+			tm.tm_mon += n * incr;
+			return approx_index(tm, next);
+		}
+		
+		// returns the index n days before / after
+		std::size_t time_series::shift_days(std::size_t line, int n, bool after, bool next) const
+		{
+			return shift_days(m_dates[line-1], n, after, next);
+		}
+		
+		std::size_t time_series::shift_days(std::string date, int n, bool after, bool next) const
+		{
+			return shift_days(to_date(date), n, after, next);
+		}
+		
+		std::size_t time_series::shift_days(struct std::tm tm, int n, bool after, bool next) const
+		{
+			int incr = after ? 1 : -1;
+			tm.tm_mday += n * incr;
+			return approx_index(tm, next);
+		}
+		
+		
 		// useless atm
 		time_point time_series::get_line(std::size_t line) const
 		{
@@ -205,8 +330,8 @@ namespace project
 			std::cout << "General info on time_series object " << m_name << std::endl;
 			std::cout << "----------------------------------" << std::endl;
 			std::cout << "Number of elements: " << get_size() << std::endl;
-			std::cout << "Date range: " << std::put_time(&m_dates[0], "%d/%m/%Y") << " - "
-						<< std::put_time(&m_dates[get_size()-1], "%d/%m/%Y") << std::endl;
+			std::cout << "Date range: " << std::put_time(&date_start(), "%d/%m/%Y") << " - "
+						<< std::put_time(&date_end(), "%d/%m/%Y") << std::endl;
 			std::cout << "Values range: " << *std::min_element(m_values.cbegin(), m_values.cend()) << " - "
 						<< *std::max_element(m_values.cbegin(), m_values.cend()) << std::endl;
 			std::cout << "Values average: " << std::accumulate(m_values.cbegin(), m_values.cend(), 0.0) / get_size() << std::endl;

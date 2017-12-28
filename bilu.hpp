@@ -16,8 +16,23 @@
 #include <tuple>
 #include <vector>
 
+	/* -------------------------------- */
+	/* ---- MANIPULATING STRUCT TM ---- */
+	/* -------------------------------- */
+
 // for comparing times in iterators
-bool operator==(const std::tm& lhs, const std::tm& rhs);
+bool operator==(const struct std::tm& lhs, const struct std::tm& rhs);
+bool operator>(struct std::tm& lhs, struct std::tm& rhs);
+bool operator<(struct std::tm& lhs, struct std::tm& rhs);
+bool operator>=(struct std::tm& lhs, struct std::tm& rhs);
+bool operator<=(struct std::tm& lhs, struct std::tm& rhs);
+
+namespace std
+{
+	double difftime(struct std::tm& time_end, struct std::tm& time_beg);
+	double difftime(const std::string& time_end, const std::string& time_beg);
+}
+
 
 
 namespace project
@@ -35,9 +50,9 @@ namespace project
 		
 		struct time_point
 		{
-			size_t index=0;
+			size_t index = 0;
 			struct std::tm date;
-			double value=0;
+			double value = 0;
 		};
 		
 		class time_series
@@ -45,8 +60,8 @@ namespace project
 		public:
 		
 			// constructors
-			time_series(std::string name, std::size_t size);
-			time_series(std::string name, std::ifstream& csv_file);
+			time_series(const std::string& name, std::size_t size);
+			time_series(const std::string& name, std::ifstream& csv_file);
 			
 			// destructor
 			~time_series();
@@ -59,6 +74,10 @@ namespace project
 			std::string get_name() const;
 			std::size_t get_size() const;
 			
+			struct std::tm date_start() const;
+			struct std::tm date_end() const;
+			
+			
 			// access - values
 			double operator[](std::size_t line) const;
 			double operator[](std::string date) const;
@@ -66,6 +85,24 @@ namespace project
 			
 			std::size_t get_index(std::string date) const;
 			std::size_t get_index(struct std::tm tm) const;
+			
+			// returns the closest value (next value / previous value)
+			std::size_t approx_index(std::string date, bool next = true) const;
+			std::size_t approx_index(struct std::tm tm, bool next = true) const;
+			
+			// returns the index n periods before / after
+			// ex for getting the last 3M period for computing vol:
+			// data.shift_months(data.date_end(), 3, false)
+			std::size_t shift_months(std::size_t line, int n, bool after = true, bool next = true) const;
+			std::size_t shift_months(std::string date, int n, bool after = true, bool next = true) const;
+			std::size_t shift_months(struct std::tm tm, int n, bool after = true, bool next = true) const;
+			
+			std::size_t shift_days(std::size_t line, int n, bool after = true, bool next = true) const;
+			std::size_t shift_days(std::string date, int n, bool after = true, bool next = true) const;
+			std::size_t shift_days(struct std::tm tm, int n, bool after = true, bool next = true) const;
+			
+			
+			
 			
 			// useless
 			time_point get_line(std::size_t line) const;
@@ -85,7 +122,7 @@ namespace project
 			
 			// data members
 			std::string m_name;
-			std::vector<std::tm> m_dates;
+			std::vector<struct std::tm> m_dates;
 			std::vector<double> m_values;
 			
 			// check line
