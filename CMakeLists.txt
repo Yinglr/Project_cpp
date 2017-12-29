@@ -22,7 +22,8 @@ endif()
 
 set(STL_SRCS
     main.cpp
-	bilu.cpp)
+	bilu.cpp
+	functions.cpp)
 
 set(STL_TARGET project_cpp)
 add_executable(${STL_TARGET} ${STL_SRCS})
