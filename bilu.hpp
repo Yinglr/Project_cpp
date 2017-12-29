@@ -47,13 +47,17 @@ namespace project
 	{
 		struct std::tm to_date(const std::string& strdate);
 		
+		// convert a difftime 
+		double difftime_to_days(double difftime);
+		double difftime_to_years(double difftime); // base ACT/365
 		
-		struct time_point
-		{
-			size_t index = 0;
-			struct std::tm date;
-			double value = 0;
-		};
+		// for printing struct std::tm
+		std::string to_string(struct std::tm tm);
+		
+		
+		
+		
+		
 		
 		class time_series
 		{
@@ -86,6 +90,8 @@ namespace project
 			std::size_t get_index(std::string date) const;
 			std::size_t get_index(struct std::tm tm) const;
 			
+			struct std::tm get_date(std::size_t line) const;
+			
 			// returns the closest value (next value / previous value)
 			std::size_t approx_index(std::string date, bool next = true) const;
 			std::size_t approx_index(struct std::tm tm, bool next = true) const;
@@ -103,9 +109,12 @@ namespace project
 			
 			
 			
+			// modify - general
+			void let_name(std::string name);
 			
-			// useless
-			time_point get_line(std::size_t line) const;
+			
+			
+			
 
 			
 			// printing info
@@ -114,9 +123,7 @@ namespace project
 			void print_info() const;
 			
 			
-			// modify - general
-			void let_name(std::string name);
-		
+
 		
 		private:
 			
