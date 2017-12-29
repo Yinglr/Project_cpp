@@ -74,7 +74,29 @@ namespace project
 		}
 		
 		
+		
+		// convert a difftime 
+		double difftime_to_days(double difftime)
+		{
+			return difftime / 3600 / 24;
+		}
+		
+		double difftime_to_years(double difftime)
+		{
+			return difftime / 3600 / 24 / 365;
+		}
+		
+		
+		
+		// for printing struct std::tm
+		std::string to_string(struct std::tm tm)
+		{
+			std::ostringstream stream;
+			stream << std::put_time(&tm, "%d/%m/%Y");
+			return stream.str();
+		}
 
+		
 		
 		// constructors
 		time_series::time_series(const std::string& name, std::size_t size)
@@ -222,6 +244,22 @@ namespace project
 		} 
 		
 		
+		
+		struct std::tm time_series::get_date(std::size_t line) const
+		{
+			if(is_line(line))
+			{
+				return m_dates[line-1];
+			}
+			else
+			{
+				std::cout << "Bad std::tm return" << std::endl;
+				struct std::tm tm = {0,0,0,0,0,0,0,0,0};
+				return tm;
+			}
+		}
+		
+		
 		// returns the closest value (next value / previous value)
 		std::size_t time_series::approx_index(std::string date, bool next) const
 		{
@@ -289,22 +327,19 @@ namespace project
 		}
 		
 		
-		// useless atm
-		time_point time_series::get_line(std::size_t line) const
+		
+		// modify - general
+		void time_series::let_name(std::string name)
 		{
-			if(is_line(line))
-			{
-				time_point tp = {line, m_dates[line-1], m_values[line-1]};
-				return tp;
-			}
-			else
-			{
-				time_point tp;
-				std::istringstream datestream("01/01/2000");
-				datestream >> std::get_time(&tp.date, "%d/%m/%Y");
-				return tp;
-			}
+			std::cout << "time_series object " << m_name << " renamed " << name << std::endl;
+			m_name = name;
 		}
+		
+		
+		
+		
+		
+		
 		
 		
 		// printing info
@@ -312,7 +347,7 @@ namespace project
 		{
 			if(is_line(line))
 			{
-				std::cout << line << " - " << std::put_time(&m_dates[line-1], "%d/%m/%Y")
+				std::cout << line << " - " << to_string(m_dates[line-1])
 						<< " - " << m_values[line-1] << std::endl;
 			}
 		}
@@ -330,8 +365,8 @@ namespace project
 			std::cout << "General info on time_series object " << m_name << std::endl;
 			std::cout << "----------------------------------" << std::endl;
 			std::cout << "Number of elements: " << get_size() << std::endl;
-			std::cout << "Date range: " << std::put_time(&date_start(), "%d/%m/%Y") << " - "
-						<< std::put_time(&date_end(), "%d/%m/%Y") << std::endl;
+			std::cout << "Date range: " << to_string(date_start()) << " - "
+						<< to_string(date_end()) << std::endl;
 			std::cout << "Values range: " << *std::min_element(m_values.cbegin(), m_values.cend()) << " - "
 						<< *std::max_element(m_values.cbegin(), m_values.cend()) << std::endl;
 			std::cout << "Values average: " << std::accumulate(m_values.cbegin(), m_values.cend(), 0.0) / get_size() << std::endl;
@@ -340,13 +375,7 @@ namespace project
 		}
 		
 		
-		// modify - general
-		void time_series::let_name(std::string name)
-		{
-			std::cout << "time_series object " << m_name << " renamed " << name << std::endl;
-			m_name = name;
-		}
-		
+
 		
 		
 		

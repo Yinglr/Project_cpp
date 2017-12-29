@@ -5,13 +5,20 @@ int main(int argc, char* argv[])
 {
     // time series object
 	std::ifstream data_file("../data.csv", std::ios_base::in);
-	project::TS::time_series data("S&P", data_file);
+	project::BS::hedged_ptf ptf("S&P", data_file);
 	data_file.close();
 	
-	data.print_info();
 	
-	std::cout << data.shift_months(data.date_end(), 3, false) << std::endl;
-	std::cout << data.shift_days(data.date_end(), 91, false) << std::endl;
+	
+	ptf.let_start(12);
+	ptf.let_end(264);
+	
+	
+	
+	ptf.print_info();
+	std::cout << ptf.get_maturity() << std::endl;
+	
+	
 	
 	
 	
