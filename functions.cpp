@@ -8,9 +8,9 @@ namespace project
 	{
 		
 		
-		double maturity(struct std::tm& start, struct std::tm& end)
+		double maturity(struct std::tm& end, struct std::tm& start)
 		{
-			double difftime = std::difftime(start, end);
+			double difftime = std::difftime(end, start);
 			return TS::difftime_to_years(difftime); // base ACT/365 for simplicity (see TS::difftime_to_years)
 		}
 		
@@ -151,7 +151,7 @@ namespace project
 		
 		
 		// modify - values
-		void hedged_ptf::let_strike(double strike)
+		void hedged_ptf::let_strike(double strike, bool percent)
 		{
 			if(strike<=0)
 			{
@@ -159,8 +159,16 @@ namespace project
 			}
 			else
 			{
-				std::cout << "Strike of portfolio " << get_name() << " set to " << strike << std::endl;
-				m_strike = strike;
+				if(percent)
+				{
+					m_strike = strike * get_spot() / 100.0;
+				}
+				else
+				{
+					m_strike = strike;
+				}
+				std::cout << "Strike of portfolio " << get_name() << " set to " << m_strike << std::endl;
+				
 			}	
 		}
 		
@@ -199,8 +207,94 @@ namespace project
 					<< " (" << TS::to_string(m_ts.get_date(end)) << ")" << std::endl;
 			m_end = end;
 		}
+		void hedged_ptf::let_last_range(std::size_t n, bool next)
+		{
+			let_start(m_ts.shift_months(m_ts.get_size(),static_cast<int>(n),false));
+			let_end(m_ts.get_size());
+			
+		}
+		
+		double hedged_ptf::get_pnl(double vol, bool call) const
+		{
+			// time to maturity
+			double mat = get_maturity();
+			
+			// portfolio
+			double value = price_bs(get_spot(), m_strike, mat, m_rate, vol, call);
+			double inv_stock = delta_bs(get_spot(), m_strike, mat, m_rate, vol, call);
+			double inv_rate = value - get_spot() * inv_stock;
+			
+			// loop on the range
+			for(std::size_t i = 1; i < get_size_range(); ++i)
+			{
+				// compute current maturity 
+				mat = maturity(m_ts.get_date(m_end), m_ts.get_date(m_start + i));
+				
+				// change in portfolio value
+				value += inv_stock * (m_ts[m_start + i] - m_ts[m_start + i - 1])
+					   + inv_rate * (std::exp(m_rate * maturity(m_ts.get_date(m_start + i), m_ts.get_date(m_start + i - 1))) - 1);
+				
+				// new delta 
+				if(mat != 0)
+					inv_stock = delta_bs(m_ts[m_start + i], m_strike, mat, m_rate, vol, call);
+				
+				// the rest is invested in the risk-free asset
+				inv_rate = value - m_ts[m_start + i] * inv_stock;
+				
+				// print
+				// std::cout << mat << ' ' << m_ts[m_start + i] << ' ' << inv_stock << ' ' << inv_rate << ' ' << value << std::endl;
+			}
+			
+			// std::cout << "final payoff: " << std::max(m_ts[m_end] - m_strike, 0.0) << std::endl;
+			double payoff = call ? std::max((m_ts[m_end] - m_strike), 0.0) : std::max((m_strike - m_ts[m_end]), 0.0);
+			return value - payoff;
+		}
 		
 		
+		double hedged_ptf::get_vol(double precision, double v_low, double v_high) const
+		{
+			// optimization depending on the moneyness
+			bool call = (m_ts[m_end] - m_strike > 0.0) ? true : false;
+			// testing if the two bounds have the same signal
+			if (get_pnl(v_low,call)*get_pnl(v_high,call)>0)
+			{
+				std::cout<< "Error in dichotomy method" << std::endl;
+			}
+			// initialization
+			double vol = (v_low + v_high) / 2.0;
+			double pnl = get_pnl(vol, call);
+			std::size_t count = 0;
+			/* 
+			// test low spot
+			for (int i=0; i<201; i++)
+			{
+				vol=v_low+i*(v_high-v_low)/200.;
+				std::cout<< "Vol: " << vol<<"  PnL: " << get_pnl(vol)<<std::endl;
+			} */
+			
+			
+			// dichotomy loop
+			while(std::abs(v_high - v_low) >= precision)
+			{
+				if(++count == 1.0/precision)
+				{
+					std::cout << "Dichotomy for implied vol did not converge" << std::endl;
+					return 0;
+				}
+				if(pnl > 0)
+				{
+					v_high = vol;
+				}
+				else
+				{
+					v_low = vol;
+				}
+				vol = (v_low + v_high) / 2.0;
+				pnl = get_pnl(vol, call);
+			}
+			// std::cout << "Dichotomy converged in " << count << " iterations" << std::endl;
+			return vol;
+		}
 		
 		
 		/* ------------------------------- */

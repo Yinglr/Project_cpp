@@ -75,7 +75,7 @@ namespace project
 			void let_name(std::string name);
 			
 			// modify - values
-			void let_strike(double strike);
+			void let_strike(double strike,bool percent=true);
 			void let_rate(double rate);
 			void let_div(double div);
 			
@@ -89,12 +89,12 @@ namespace project
 			
 			
 			// // sets range to last n months (for vol computations)
-			// void let_last_range(std::size_t n, bool next = true)); // uses shift_months
+			void let_last_range(std::size_t n, bool next = true); // uses shift_months
 			
 			
 			// // P&L computations
-			// double get_pnl(double vol) const;
-			// double get_vol() const;
+			double get_pnl(double vol, bool call=true) const;
+			double get_vol(double epsilon=0.00001, double lower=0.0, double upper=1.) const;
 			
 			
 		private:
