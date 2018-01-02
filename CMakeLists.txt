@@ -23,7 +23,8 @@ endif()
 set(STL_SRCS
     main.cpp
 	bilu.cpp
-	functions.cpp)
+	functions.cpp
+	vol_surface.cpp)
 
 set(STL_TARGET project_cpp)
 add_executable(${STL_TARGET} ${STL_SRCS})

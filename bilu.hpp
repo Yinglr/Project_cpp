@@ -27,6 +27,7 @@ bool operator<(struct std::tm& lhs, struct std::tm& rhs);
 bool operator>=(struct std::tm& lhs, struct std::tm& rhs);
 bool operator<=(struct std::tm& lhs, struct std::tm& rhs);
 
+// overloads for std::tm
 namespace std
 {
 	double difftime(struct std::tm& time_end, struct std::tm& time_beg);

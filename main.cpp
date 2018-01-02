@@ -1,6 +1,8 @@
 #include "bilu.hpp"
 #include "functions.hpp"
-std::vector<double> vol_skew(project::BS::hedged_ptf & ptf, const std::vector<double>& strikes);
+#include "vol_surface.hpp"
+
+std::vector<double> vol_skew(project::BS::hedged_ptf& ptf, const std::vector<double>& strikes);
 
 int main(int argc, char* argv[])
 {
@@ -41,24 +43,23 @@ int main(int argc, char* argv[])
 	ptf.let_rate(0.01);
 	ptf.print_info();
 	
-	std::vector<double> strikes={60.,70.,80.,90.,100.,110.,120.};
-	std::vector<double> skew=vol_skew(ptf,strikes);
-	//ptf.let_strike(70.,true);
-	ptf.get_vol();
-	//std::cout<<project::BS::price_bs(100., 100., 1, 0.01, 0.12, true)<<std::endl;
+	std::vector<double> strikes = {50.0, 60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0};
+	std::vector<double> skew = vol_skew(ptf,strikes);
+	
+	for(std::size_t i = 0; i < strikes.size(); ++i)
+		std::cout << strikes[i] << " - " << skew[i] << std::endl;
+	
 	return 0;
 }
 
-std::vector<double> vol_skew(project::BS::hedged_ptf & ptf, const std::vector<double>& strikes)
+std::vector<double> vol_skew(project::BS::hedged_ptf& ptf, const std::vector<double>& strikes)
 {
 	std::vector<double> skew(strikes.size());
-	for (int i = 0; i<strikes.size();i++)
+	for(std::size_t i = 0; i < strikes.size(); ++i)
 	{
-		ptf.let_strike(strikes[i],true);
-		skew[i]=ptf.get_vol();
-		std::cout<<"Vol of strike " << strikes[i]<< " is " <<skew[i]<<std::endl;
+		ptf.let_strike(strikes[i]);
+		skew[i] = ptf.get_implied_vol();
 	}
 	return skew;
-	
 }
 

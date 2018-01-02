@@ -1,5 +1,6 @@
 #include "bilu.hpp"
 #include "functions.hpp"
+#include "vol_surface.hpp"
 
 namespace project
 {
@@ -33,6 +34,7 @@ namespace project
 		{
 			m_start = 1;
 			m_end = m_ts.get_size();
+			let_strike(strike);
 		}
 		
 		
@@ -207,13 +209,24 @@ namespace project
 					<< " (" << TS::to_string(m_ts.get_date(end)) << ")" << std::endl;
 			m_end = end;
 		}
+		
+		
+		
+		// sets range to last n months (for vol computations)
 		void hedged_ptf::let_last_range(std::size_t n, bool next)
 		{
 			let_start(m_ts.shift_months(m_ts.get_size(),static_cast<int>(n),false));
 			let_end(m_ts.get_size());
-			
 		}
 		
+		
+		
+		
+		
+		
+		
+		
+		// P&L computations
 		double hedged_ptf::get_pnl(double vol, bool call) const
 		{
 			// time to maturity
@@ -251,15 +264,17 @@ namespace project
 		}
 		
 		
-		double hedged_ptf::get_vol(double precision, double v_low, double v_high) const
+		double hedged_ptf::get_implied_vol(double precision, double v_low, double v_high) const
 		{
 			// optimization depending on the moneyness
 			bool call = (m_ts[m_end] - m_strike > 0.0) ? true : false;
+			
 			// testing if the two bounds have the same signal
 			if (get_pnl(v_low,call)*get_pnl(v_high,call)>0)
 			{
 				std::cout<< "Error in dichotomy method" << std::endl;
 			}
+			
 			// initialization
 			double vol = (v_low + v_high) / 2.0;
 			double pnl = get_pnl(vol, call);
