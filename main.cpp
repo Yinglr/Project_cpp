@@ -6,12 +6,25 @@ std::vector<double> vol_skew(project::BS::hedged_ptf& ptf, const std::vector<dou
 
 int main(int argc, char* argv[])
 {
-    // time series object
+    
+	
+	// time series object
 	std::ifstream data_file("../data.csv", std::ios_base::in);
 	project::BS::hedged_ptf ptf("S&P", data_file);
 	data_file.close();
 	
 	
+	ptf.let_last_range(12);
+	// ptf.let_rate(0.01);
+	ptf.print_info();
+	
+	
+	project::VS::vol_surface vs(ptf);
+
+	vs.load_vol_surface();
+	vs.print_vol_surface();
+	
+	vs.export_to_csv();
 	
 	/* ptf.let_start(12);
 	ptf.let_end(264);
