@@ -39,7 +39,7 @@ namespace project
 			
 			// constructors
 			hedged_ptf(const std::string& name, std::ifstream& csv_file,
-					   double strike = 100, double rate = 0, double div = 0);
+					   double strike = 100.0, double rate = 0.0, double div = 0.0);
 			
 			// destructor
 			~hedged_ptf();
@@ -75,7 +75,7 @@ namespace project
 			void let_name(std::string name);
 			
 			// modify - values
-			void let_strike(double strike,bool percent=true);
+			void let_strike(double strike, bool percent = true);
 			void let_rate(double rate);
 			void let_div(double div);
 			
@@ -88,13 +88,13 @@ namespace project
 			// void let_range(std::size_t start, std::size_t end);
 			
 			
-			// // sets range to last n months (for vol computations)
+			// sets range to last n months (for vol computations)
 			void let_last_range(std::size_t n, bool next = true); // uses shift_months
 			
 			
-			// // P&L computations
-			double get_pnl(double vol, bool call=true) const;
-			double get_vol(double epsilon=0.00001, double lower=0.0, double upper=1.) const;
+			// P&L computations
+			double get_pnl(double vol, bool call = true) const;
+			double get_implied_vol(double precision = 1e-5, double v_low = 0.0, double v_high = 1.0) const;
 			
 			
 		private:
