@@ -87,7 +87,9 @@ namespace project
 			// P&L computations
 			double get_pnl(double vol, bool call = true) const;
 			double get_implied_vol(double precision = 1e-5, double v_low = 0.0, double v_high = 1.0) const;
-			
+			double get_pnl2(double vol, bool call = true) const;
+			double get_implied_vol2(double precision = 1e-5, double v_low = 0.0, double v_high = 1.0,double tol=1e-10) const;
+
 			
 		private:
 			

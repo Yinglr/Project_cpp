@@ -284,9 +284,9 @@ namespace project
 			double mat = get_maturity();
 			
 			// portfolio
-			double value = price_bs(get_spot(), m_strike, mat, m_rate, vol, call);
-			double inv_stock = delta_bs(get_spot(), m_strike, mat, m_rate, vol, call);
-			double inv_rate = value - get_spot() * inv_stock;
+			long double value = price_bs(get_spot(), m_strike, mat, m_rate, vol, call);
+			long double inv_stock = delta_bs(get_spot(), m_strike, mat, m_rate, vol, call);
+			long double inv_rate = value - get_spot() * inv_stock;
 			
 			// loop on the range
 			for(std::size_t i = 1; i < get_size_range(); ++i)
@@ -296,7 +296,7 @@ namespace project
 				
 				// change in portfolio value
 				value += inv_stock * (m_ts[m_start + i] - m_ts[m_start + i - 1])
-					   + inv_rate * (std::exp(m_rate * maturity(m_ts.get_date(m_start + i), m_ts.get_date(m_start + i - 1))) - 1);
+					   + inv_rate * (std::exp(m_rate * maturity(m_ts.get_date(m_start + i), m_ts.get_date(m_start + i - 1))) - 1.0);
 				
 				// new delta 
 				if(mat != 0)
@@ -310,7 +310,7 @@ namespace project
 			}
 			
 			// std::cout << "final payoff: " << std::max(m_ts[m_end] - m_strike, 0.0) << std::endl;
-			double payoff = call ? std::max((m_ts[m_end] - m_strike), 0.0) : std::max((m_strike - m_ts[m_end]), 0.0);
+			long double payoff = call ? std::max((m_ts[m_end] - m_strike), 0.0) : std::max((m_strike - m_ts[m_end]), 0.0);
 			return value - payoff;
 		}
 		
@@ -320,7 +320,7 @@ namespace project
 			// optimization depending on the moneyness
 			bool call = (m_ts[m_end] - m_strike > 0.0) ? true : false;
 			
-			// testing if the two bounds have the same signal
+			// testing if the two bounds have the same sign
 			if (get_pnl(v_low,call)*get_pnl(v_high,call)>0)
 			{
 				std::cout<< "Error in dichotomy method" << std::endl;
@@ -330,13 +330,13 @@ namespace project
 			double vol = (v_low + v_high) / 2.0;
 			double pnl = get_pnl(vol, call);
 			std::size_t count = 0;
-			/* 
-			// test low spot
+			
+			/* // test low spot
 			for (int i=0; i<201; i++)
 			{
 				vol=v_low+i*(v_high-v_low)/200.;
-				std::cout<< "Vol: " << vol<<"  PnL: " << get_pnl(vol)<<std::endl;
-			} */
+				std::cout<< "Vol: " << vol<<"  PnL: " << get_pnl2(vol)<<std::endl;
+			}  */
 			
 			
 			// dichotomy loop
@@ -362,7 +362,91 @@ namespace project
 			return vol;
 		}
 		
-		
+		double hedged_ptf::get_pnl2(double vol, bool call) const
+		{
+			// This method does not take into account the interest of risk-free position
+			// But it does not work very well 
+			
+			
+			
+			// time to maturity
+			double mat = get_maturity();
+			
+			// portfolio
+			double value = price_bs(get_spot(), m_strike, mat, m_rate, vol, call);
+			double inv_stock = delta_bs(get_spot(), m_strike, mat, m_rate, vol, call);
+			
+			
+			// loop on the range
+			for(std::size_t i = 1; i < get_size_range(); ++i)
+			{
+				// compute current maturity 
+				mat = maturity(m_ts.get_date(m_end), m_ts.get_date(m_start + i));
+				
+				// pnl from delta hedging
+				value += inv_stock * (m_ts[m_start + i] - m_ts[m_start + i - 1]);
+					   
+				// new delta 
+				//if(mat != 0) 
+				if (i!=get_size_range()-1)
+					inv_stock = delta_bs(m_ts[m_start + i], m_strike, mat, m_rate, vol, call);
+				
+				
+			}
+			
+			// std::cout << "final payoff: " << std::max(m_ts[m_end] - m_strike, 0.0) << std::endl;
+			double payoff = call ? std::max((m_ts[m_end] - m_strike), 0.0) : std::max((m_strike - m_ts[m_end]), 0.0);
+			return value - payoff;
+		}
+		double hedged_ptf::get_implied_vol2(double precision, double v_low, double v_high, double tol) const
+		{
+			// In this method we assume that the pnl is in general increasing with implied-volatility.
+			// By analyzing pnl for different implied volatility at lower strike, we found 
+			// the pnl is not exactly monotone.
+			// Also, for lower strikes the pnl converge to 0 quickly with the decrease of vol.
+			
+			// We want to create a method that allows to find the implied-vol 
+			// that gives a pnl equal to the tolerance (0.00001 for example)
+			
+			// optimization depending on the moneyness
+			bool call = (m_ts[m_end] - m_strike > 0.0) ? true : false;
+			
+			std::size_t n = 0;
+			
+			// initialization
+			double vol = (v_low + v_high) / 2.0;
+			double pnl = get_pnl(vol, call);
+			std::size_t count = 0;
+			// test low spot
+			/* for (int i=0; i<201; i++)
+			{
+				vol=v_low+i*(v_high-v_low)/200.;
+				std::cout<< "Vol: " << vol<<"  PnL: " << get_pnl(vol)<<std::endl;
+			}  */
+			
+			while(std::abs(v_high - v_low) >= precision)
+			{
+				if(++count == 1.0/precision)
+				{
+					std::cout << "Dichotomy for implied vol did not converge" << std::endl;
+					return 0;
+				}
+				if(pnl > tol)
+				{
+					v_high = vol;
+				}
+				else
+				{
+					v_low = vol;
+				}
+				vol = (v_low + v_high) / 2.0;
+				pnl = get_pnl(vol, call);
+				n++;
+			}
+			std::cout << "Number of iteration: " << n << std::endl;
+			return vol;
+				
+		}
 		
 		
 	}

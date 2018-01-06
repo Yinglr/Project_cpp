@@ -200,7 +200,7 @@ namespace project
 				for(std::size_t j = 0; j < m_strikes.size(); ++j)
 				{
 					p_ptf->let_strike(m_strikes[j]);
-					m_vols[i * m_strikes.size() + j] = p_ptf->get_implied_vol();
+					m_vols[i * m_strikes.size() + j] = p_ptf->get_implied_vol2();
 				}
 			}
 			std::cout << "vol_surface " << get_name() << " correctly updated" << std::endl;

@@ -16,18 +16,20 @@ int main(int argc, char* argv[])
 	data_file.close();
 	
 	// 3. setting the ptf + printing infos
-	ptf.let_rate(0.01);
+	ptf.let_rate(0.00);
 	ptf.print_info();
 	
 	// 4. create a vol_surface instance pointing on ptf
-	project::VS::vol_surface vs(ptf, std::vector<double> {12});
+	project::VS::vol_surface vs(ptf);
 
 	// 5. computes the whole volatility surface
 	vs.load_vol_surface();
 	vs.print_vol_surface();
 	
+	vs.print_maturity(12); 
+	
 	// 6. export the results to .csv file
-	vs.export_to_csv(/* optional path */);
+	// vs.export_to_csv(/* optional path */);
 	
 	
 	/* ptf.let_start(12);
@@ -43,7 +45,7 @@ int main(int argc, char* argv[])
 		std::cout.precision(4);
 		std::cout << "Vol: " << vol << ", PnL: "<< ptf.get_pnl(vol) << std::endl;
 	} */
-	std::cout.precision(5);
+	
 	/* for (double k=40; k<100; k=k+1)
 	{
 		ptf.let_strike(k*ptf.get_ts()[12]/100.0);
@@ -60,13 +62,16 @@ int main(int argc, char* argv[])
 	ptf.let_rate(0.01);
 	ptf.print_info();
 	
-	std::vector<double> strikes = {50.0, 60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0};
+	std::vector<double> strikes = { 70.0, 80.0, 90.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0};
 	std::vector<double> skew = vol_skew(ptf,strikes);
 	
 	for(std::size_t i = 0; i < strikes.size(); ++i)
 		std::cout << strikes[i] << " - " << skew[i] << std::endl;
 	
 	return 0;
+	
+	/* ptf.let_strike(100.);
+	std::cout << ptf.get_implied_vol2() << std::endl; */
 }
 
 std::vector<double> vol_skew(project::BS::hedged_ptf& ptf, const std::vector<double>& strikes)
@@ -75,7 +80,7 @@ std::vector<double> vol_skew(project::BS::hedged_ptf& ptf, const std::vector<dou
 	for(std::size_t i = 0; i < strikes.size(); ++i)
 	{
 		ptf.let_strike(strikes[i]);
-		skew[i] = ptf.get_implied_vol();
+		skew[i] = ptf.get_implied_vol2();
 	}
 	return skew;
 }
