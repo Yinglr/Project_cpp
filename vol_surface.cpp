@@ -14,7 +14,7 @@ namespace project
 		/* ---------------------------------- */
 		
 		// constructors
-		vol_surface::vol_surface(BS::hedged_ptf& ptf, std::vector<double> strikes, std::vector<double> maturities)
+		vol_surface::vol_surface(BS::hedged_ptf& ptf, std::vector<double> maturities, std::vector<double> strikes)
 			: p_ptf(&ptf), m_strikes(strikes), m_maturities(maturities)
 		{
 			m_vols.resize(strikes.size() * maturities.size());
@@ -26,7 +26,7 @@ namespace project
 		vol_surface::~vol_surface()
 		{
 			std::cout << "Deletion of vol_suraface object " << get_name() << std::endl;
-			// care!! No pointer destroyer
+			// Care: No pointer destroyer!!!
 		}
 		
 		
@@ -51,6 +51,8 @@ namespace project
 		
 		
 		// access - volatilities
+		
+		// one element of the vol surface
 		double vol_surface::get_vol(double strike, double maturity) const
 		{
 			double vol;
@@ -66,11 +68,13 @@ namespace project
 			return vol;
 		}
 		
-		std::vector<double> vol_surface::get_strike(double strike) const // term structure
+		// term structure
+		std::vector<double> vol_surface::get_strike(double strike) const 
 		{
-			std::vector<double> term_structure(m_maturities.size());
+			std::vector<double> term_structure(m_maturities.size()); // has to be declared outside
 			try
 			{
+				// fill the term_structure vector looping through maturities
 				for(std::size_t i = 0; i < m_maturities.size(); ++i)
 				{
 					term_structure[i] = m_vols[i * m_strikes.size() + index_strike(strike)];
@@ -84,11 +88,13 @@ namespace project
 			return term_structure;
 		}
 		
-		std::vector<double> vol_surface::get_maturity(double maturity) const // skew
+		// skew
+		std::vector<double> vol_surface::get_maturity(double maturity) const 
 		{
-			std::vector<double> skew(m_strikes.size());
+			std::vector<double> skew(m_strikes.size()); // has to be declared outside
 			try
 			{
+				// fill the skew vector looping through strikes
 				for(std::size_t i = 0; i < m_strikes.size(); ++i)
 				{
 					skew[i] = m_vols[index_maturity(maturity) * m_strikes.size() + i];
@@ -111,6 +117,7 @@ namespace project
 		{
 			for(std::size_t i = 0; i < m_strikes.size(); ++i)
 			{
+				// formatting: padding strikes with leading zeros
 				std::cout << std::setfill('0') << std::setw(3) << m_strikes[i] << str;
 			}
 			std::cout << std::endl;
@@ -130,7 +137,9 @@ namespace project
 		
 		
 		// printing - volatilities
-		void vol_surface::print_strike(double strike) const // term structure
+		
+		// term structure
+		void vol_surface::print_strike(double strike) const 
 		{
 			std::vector<double> term_structure = get_strike(strike);
 			std::cout << "Term structure for strike " << strike << std::endl;
@@ -143,7 +152,9 @@ namespace project
 			}
 		}
 		
-		void vol_surface::print_maturity(double maturity) const // skew
+		
+		// skew
+		void vol_surface::print_maturity(double maturity) const 
 		{
 			std::vector<double> skew = get_maturity(maturity);
 			std::cout << "Skew for maturity " << maturity << std::endl;

@@ -32,8 +32,8 @@ namespace project
 		public:
 		
 			// constructors
-			time_series(const std::string& name, std::size_t size);
-			time_series(const std::string& name, std::ifstream& csv_file);
+			time_series(const std::string& name, std::size_t size); // without loading the data
+			time_series(const std::string& name, std::ifstream& csv_file); // directly from a csv file
 			
 			// destructor
 			~time_series();
@@ -55,10 +55,13 @@ namespace project
 			double operator[](std::string date) const;
 			double operator[](struct std::tm date) const;
 			
+			// access - index
 			std::size_t get_index(std::string date) const;
 			std::size_t get_index(struct std::tm tm) const;
 			
+			// acces - dates
 			struct std::tm get_date(std::size_t line) const;
+			
 			
 			// returns the closest value (next value / previous value)
 			std::size_t approx_index(std::string date, bool next = true) const;
@@ -82,9 +85,6 @@ namespace project
 			
 			
 			
-			
-
-			
 			// printing info
 			void print_line(std::size_t line) const;
 			void print_data() const;
@@ -100,8 +100,10 @@ namespace project
 			std::vector<struct std::tm> m_dates;
 			std::vector<double> m_values;
 			
+			
 			// check line
 			bool is_line(std::size_t line) const;
+			
 		};
 		
 	}

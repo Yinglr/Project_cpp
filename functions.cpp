@@ -8,7 +8,7 @@
 	/* ---- MANIPULATING STRUCT TM ---- */
 	/* -------------------------------- */
 
-// for comparing times in iterators
+// for comparing std::tm structures (eg. in iterators)
 bool operator==(const struct std::tm& lhs, const struct std::tm& rhs)
 {
 	return std::tie(lhs.tm_year, lhs.tm_mon, lhs.tm_mday) ==
@@ -17,12 +17,12 @@ bool operator==(const struct std::tm& lhs, const struct std::tm& rhs)
 
 bool operator>(struct std::tm& lhs, struct std::tm& rhs)
 {
-	return (std::difftime(lhs, rhs) > 0);
+	return (std::difftime(lhs, rhs) > 0.0);
 }
 
 bool operator<(struct std::tm& lhs, struct std::tm& rhs)
 {
-	return (std::difftime(lhs, rhs) < 0);
+	return (std::difftime(lhs, rhs) < 0.0);
 }
 
 bool operator>=(struct std::tm& lhs, struct std::tm& rhs)
@@ -58,7 +58,7 @@ namespace project
 	namespace BS
 	{
 		
-		
+		// returns a maturity in years using difftime overload (ACT/365 basis)
 		double maturity(struct std::tm& end, struct std::tm& start)
 		{
 			double difftime = std::difftime(end, start);
@@ -73,13 +73,15 @@ namespace project
 		// normal cumulative distribution
 		double normal_cdf(double x)
 		{
-		   return 0.5 * std::erfc(-x / std::sqrt(2));
+		   // using existing std error function
+		   return 0.5 * std::erfc(-x / std::sqrt(2.0));
 		}
 		
 		// normal probability distribution
 		double normal_pdf(double x)
 		{
-		   return std::exp(-x * x * 0.5) / std::sqrt(8 * std::atan(1.0));
+		   // using existing std atan function
+		   return std::exp(-x * x * 0.5) / std::sqrt(8.0 * std::atan(1.0));
 		}
 		
 		/* -------------------------------- */
@@ -104,7 +106,7 @@ namespace project
 			if(call)
 				return normal_cdf(d);
 			else
-				return normal_cdf(d) - 1;
+				return normal_cdf(d) - 1; // from call-put parity
 		}
 
 		// Black-Scholes Gamma
@@ -150,22 +152,23 @@ namespace project
 	
 	namespace TS
 	{
-		// string to date function
+		// string to std::tm function
 		struct std::tm to_date(const std::string& strdate)
 		{
-			struct std::tm dt;
+			struct std::tm tm;
 			std::istringstream datestream(strdate);
-			datestream >> std::get_time(&dt, "%d/%m/%Y");
+			datestream >> std::get_time(&tm, "%d/%m/%Y");
+			
 			// necessary sets to zero so mktime works
-			dt.tm_sec = 0;
-			dt.tm_min = 0;
-			dt.tm_hour = 0;
-			return dt;
+			tm.tm_sec = 0;
+			tm.tm_min = 0;
+			tm.tm_hour = 0;
+			return tm;
 		}
 		
 		
 		
-		// convert a difftime 
+		// convert a difftime (which is in seconds)
 		double difftime_to_days(double difftime)
 		{
 			return difftime / 3600 / 24;
@@ -173,12 +176,12 @@ namespace project
 		
 		double difftime_to_years(double difftime)
 		{
-			return difftime / 3600 / 24 / 365;
+			return difftime / 3600 / 24 / 365; // basis ACT/365
 		}
 		
 		
 		
-		// for printing struct std::tm
+		// std::tm to string function (for printing struct std::tm)
 		std::string to_string(struct std::tm tm)
 		{
 			std::ostringstream stream;
@@ -197,42 +200,57 @@ namespace project
 	namespace csv
 	{
 		// checks if the file is open (used in all functions using csv)
-		bool is_open(std::ifstream& csv_file)
+		void is_open(std::ifstream& csv_file)
 		{
 			if(!csv_file.is_open())
 			{
-				std::cout << "Error: argument file not open" << std::endl;
-				return false;
-			}
-			else
-			{
-				return true;
+				throw "Error: argument file not open!";
 			}
 		}
 		
 		// comes back to the beginning of the csv file (after an interation)
 		void reset(std::ifstream& csv_file)
 		{
-			if(is_open(csv_file))
+			try
 			{
+				is_open(csv_file); // tries if the file is open
+				
 				csv_file.clear();
 				csv_file.seekg(0, std::ios::beg);
+			}
+			catch(const char* msg)
+			{
+				std::cerr << msg << std::endl;
+				std::cout << "Error: file could not be reset!" << std::endl;
 			}
 		}
 		
 		// returns the number of lines
 		std::size_t count_lines(std::ifstream& csv_file)
 		{
-			if(is_open(csv_file))
+			try
 			{
+				is_open(csv_file); // tries if the file is open
+				
 				csv_file.unsetf(std::ios_base::skipws);
 				std::size_t nb_lines = std::count(std::istream_iterator<char>(csv_file), std::istream_iterator<char>(), '\n');
 				csv_file.setf(std::ios_base::skipws);
-				reset(csv_file);
+				
+				// reset the file
+				try
+				{
+					reset(csv_file);
+				}
+				catch(const char* msg)
+				{
+					std::cerr << msg << std::endl;
+				}
+				
 				return nb_lines;
 			}
-			else
+			catch(const char* msg)
 			{
+				std::cerr << msg << std::endl;
 				return 0;
 			}
 		}
@@ -240,8 +258,10 @@ namespace project
 		// prints the whole csv file
 		void print_csv(std::ifstream& csv_file)
 		{
-			if(is_open(csv_file))
+			try
 			{
+				is_open(csv_file); // tries if the file is open
+				
 				std::string text;
 				std::size_t i = 0;
 				
@@ -252,17 +272,33 @@ namespace project
 					if(!text.empty())
 						std::cout << ++i << " - " << text << std::endl;
 				}
-				reset(csv_file);
+				
+				// reset the file
+				try
+				{
+					reset(csv_file);
+				}
+				catch(const char* msg)
+				{
+					std::cerr << msg << std::endl;
+				}
+			}
+			catch(const char* msg)
+			{
+				std::cerr << msg << std::endl;
 			}
 		}
 		
 		// prints only the requested line from the csv file
 		void print_line(std::ifstream& csv_file, std::size_t line)
 		{
-			if(is_open(csv_file))
+			try
 			{
+				is_open(csv_file); // tries if the file is open
+				
 				std::string text;
 				std::size_t i = 0;
+				
 				while(csv_file.good() && (i++ < line))
 					std::getline(csv_file, text, '\n');
 				
@@ -270,7 +306,20 @@ namespace project
 					text = text.substr(3);
 				
 				std::cout << line << " - " << text << std::endl;
-				reset(csv_file);
+				
+				// reset the file
+				try
+				{
+					reset(csv_file);
+				}
+				catch(const char* msg)
+				{
+					std::cerr << msg << std::endl;
+				}
+			}
+			catch(const char* msg)
+			{
+				std::cerr << msg << std::endl;
 			}
 		}
 	}

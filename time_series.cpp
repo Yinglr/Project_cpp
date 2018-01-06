@@ -14,17 +14,33 @@ namespace project
 	{
 
 		// constructors
+		// without loading the data
 		time_series::time_series(const std::string& name, std::size_t size)
 			: m_name(name), m_dates(size), m_values(size)
 		{}
 		
+		// directly from a csv file
 		time_series::time_series(const std::string& name, std::ifstream& csv_file)
 			: m_name(name)
 		{
-			std::size_t size = csv::count_lines(csv_file);
-			m_dates.resize(size); 
-			m_values.resize(size);
-			load_from_csv(csv_file);
+			try
+			{
+				csv::is_open(csv_file); // tries if the file is open
+				
+				// resize vectors
+				std::size_t size = csv::count_lines(csv_file);
+				m_dates.resize(size); 
+				m_values.resize(size);
+				
+				// loads the data from the file
+				load_from_csv(csv_file);
+			}
+			catch(const char* msg)
+			{
+				// error messages
+				std::cerr << msg << std::endl;
+				std::cout << "Error: time_series object " << m_name << " was not initialized" << std::endl;
+			}
 		}
 		
 		//destructor
@@ -36,8 +52,10 @@ namespace project
 		// import data
 		void time_series::load_from_csv(std::ifstream& csv_file)
 		{
-			if(csv::is_open(csv_file))
+			try
 			{
+				csv::is_open(csv_file); // tries if the file is open
+				
 				std::size_t csv_size = csv::count_lines(csv_file);
 				if(get_size() != csv_size)
 				{
@@ -51,23 +69,39 @@ namespace project
 					
 					while(csv_file.good())
 					{
-						std::getline(csv_file, date, ';');
-						std::getline(csv_file, value, '\n');
+						std::getline(csv_file, date, ';'); // get the date
+						std::getline(csv_file, value, '\n'); // get the value
 						if(!date.empty())
 						{
 							// storing the date
-							if(i==0) // first date has some additionnal characters
+							if(i == 0) // first date has some additionnal characters (pb of .csv file)
 								date = date.substr(3);
 							
 							m_dates[i] = to_date(date);
+							
 							// storing the value
 							m_values[i] = std::atof(value.c_str());
 							i++;
 						}
 					}
-					csv::reset(csv_file);
+					
+					// reset the file
+					try
+					{
+						csv::reset(csv_file);
+					}
+					catch(const char* msg)
+					{
+						std::cerr << msg << std::endl;
+					}
+				
 					std::cout << "Data successfully loaded into time_series object " << m_name << std::endl;
 				}
+			}
+			catch(const char* msg)
+			{
+				std::cerr << msg << std::endl;
+				std::cout << "Error: data not loaded in time_series object " << m_name << std::endl;
 			}
 		}
 		
@@ -84,12 +118,12 @@ namespace project
 		
 		struct std::tm time_series::date_start() const
 		{
-			return m_dates[0];
+			return m_dates[0]; // returns the first date
 		}
 		
 		struct std::tm time_series::date_end() const
 		{
-			return m_dates[get_size()-1];
+			return m_dates[get_size()-1]; // returns the last date
 		}
 		
 		
@@ -122,7 +156,7 @@ namespace project
 			}
 		}
 		
-		// by date as a tm
+		// by date as a std::tm
 		double time_series::operator[](struct std::tm date) const
 		{
 			std::size_t line(get_index(date));
@@ -137,7 +171,7 @@ namespace project
 		}
 		
 		
-		
+		// access - index
 		std::size_t time_series::get_index(std::string date) const
 		{
 			return get_index(to_date(date));
@@ -147,7 +181,7 @@ namespace project
 		{
 			auto pos = std::find(m_dates.cbegin(), m_dates.cend(), tm);
 			std::size_t index = std::distance(m_dates.cbegin(), pos) + 1;
-			if(is_line(index))
+			if(is_line(index)) // if not means we didn't find
 			{
 				return index;
 			}
@@ -159,7 +193,7 @@ namespace project
 		} 
 		
 		
-		
+		// acces - dates
 		struct std::tm time_series::get_date(std::size_t line) const
 		{
 			if(is_line(line))
@@ -218,6 +252,7 @@ namespace project
 		
 		std::size_t time_series::shift_months(struct std::tm tm, int n, bool after, bool next) const
 		{
+			// if we want the date after then we will do +n otherwise -n
 			int incr = after ? 1 : -1;
 			tm.tm_mon += n * incr;
 			return approx_index(tm, next);
@@ -236,6 +271,7 @@ namespace project
 		
 		std::size_t time_series::shift_days(struct std::tm tm, int n, bool after, bool next) const
 		{
+			// if we want the date after then we will do +n otherwise -n
 			int incr = after ? 1 : -1;
 			tm.tm_mday += n * incr;
 			return approx_index(tm, next);
@@ -269,7 +305,7 @@ namespace project
 		
 		void time_series::print_data() const
 		{
-			for(std::size_t i=1;i<=get_size();++i)
+			for(std::size_t i = 1; i <= get_size(); ++i)
 				print_line(i);
 		}
 		
@@ -297,7 +333,7 @@ namespace project
 		
 		
 		
-		// check line
+		// check line (kind of exception management)
 		bool time_series::is_line(std::size_t line) const
 		{
 			if((line > get_size()) || (line <= 0))

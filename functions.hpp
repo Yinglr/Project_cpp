@@ -21,7 +21,7 @@
 	/* ---- MANIPULATING STRUCT TM ---- */
 	/* -------------------------------- */
 
-// for comparing times in iterators
+// for comparing std::tm structures (eg. in iterators)
 bool operator==(const struct std::tm& lhs, const struct std::tm& rhs);
 bool operator>(struct std::tm& lhs, struct std::tm& rhs);
 bool operator<(struct std::tm& lhs, struct std::tm& rhs);
@@ -48,11 +48,12 @@ namespace project
 	
 	namespace BS
 	{
+		// returns a maturity in years using difftime overload (ACT/365 basis)
 		double maturity(struct std::tm& start, struct std::tm& end);
 		
 		// normal distribution
-		double normal_cdf(double x);
-		double normal_pdf(double x);
+		double normal_cdf(double x); // using std::erfc
+		double normal_pdf(double x); // using std::atan
 		
 		// Black-Scholes formulas
 		double price_bs(double S, double K, double T, double r, double v, bool call = true);
@@ -73,13 +74,14 @@ namespace project
 	
 	namespace TS
 	{
+		// string to std::tm
 		struct std::tm to_date(const std::string& strdate);
 		
-		// convert a difftime 
+		// convert a difftime (which is in seconds)
 		double difftime_to_days(double difftime);
-		double difftime_to_years(double difftime); // base ACT/365
+		double difftime_to_years(double difftime); // basis ACT/365
 		
-		// for printing struct std::tm
+		// std::tm to string / for printing struct std::tm
 		std::string to_string(struct std::tm tm);
 	}
 	
@@ -93,15 +95,20 @@ namespace project
 	// CSV FILES
 	namespace csv
 	{
-		bool is_open(std::ifstream& csv_file);
+		// checks if the file is open (used in all functions using csv)
+		void is_open(std::ifstream& csv_file);
+		
+		// comes back to the beginning of the csv file (after an interation)
 		void reset(std::ifstream& csv_file);
 		
-		
+		// returns the number of lines in the file
 		std::size_t count_lines(std::ifstream& csv_file);
 		
-		
+		// prints the whole csv file
 		void print_csv(std::ifstream& csv_file);
-		void print_line(std::ifstream& csv_file, std::size_t line);
+
+		// prints only the requested line from the csv file
+		void print_line(std::ifstream& csv_file, std::size_t line); 
 	}
 
 }

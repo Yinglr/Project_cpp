@@ -185,24 +185,88 @@ namespace project
 		// modify - date range
 		void hedged_ptf::let_start(std::size_t start)
 		{
-			std::cout << "Start of portfolio " << get_name() << " set to " << start
-					<< " (" << TS::to_string(m_ts.get_date(start)) << ")" << std::endl;
-			m_start = start;
+			// if out of range
+			if((start < 1) | (start >= get_size()))
+			{
+				std::cout << "Error on portfolio " << get_name() << ": attempted let_start " << start
+						<< " is out of its possible range (" << 1 << " - " << get_size()-1 << ")" << std::endl;
+			}
+			else
+			{
+				// if start above current end
+				if(start >= m_end)
+				{
+					std::cout << "Error on portfolio " << get_name() << ": attempted let_start " << start
+							<< " is equal to or above end (" << m_end << ")" << std::endl;
+				}
+				else
+				{
+					std::cout << "Start of portfolio " << get_name() << " set to " << start
+							<< " (" << TS::to_string(m_ts.get_date(start)) << ")" << std::endl;
+					m_start = start; // let the new start
+				}
+			}
 		}
 		
 		void hedged_ptf::let_end(std::size_t end)
 		{
-			std::cout << "End of portfolio " << get_name() << " set to " << end
-					<< " (" << TS::to_string(m_ts.get_date(end)) << ")" << std::endl;
-			m_end = end;
+			// if out of range
+			if((end <= 1) | (end > get_size()))
+			{
+				std::cout << "Error on portfolio " << get_name() << ": attempted let_end " << end
+						<< " is out of its possible range (" << 2 << " - " << get_size() << ")" << std::endl;
+			}
+			else
+			{
+				// if end below current start
+				if(end <= m_start)
+				{
+					std::cout << "Error on portfolio " << get_name() << ": attempted let_end " << end
+							<< " is equal to or below start (" << m_start << ")" << std::endl;
+				}
+				else
+				{
+					std::cout << "End of portfolio " << get_name() << " set to " << end
+							<< " (" << TS::to_string(m_ts.get_date(end)) << ")" << std::endl;
+					m_end = end; // let the new end
+				}
+			}
 		}
 		
+		void hedged_ptf::let_range(std::size_t start, std::size_t end)
+		{
+			// we want a range to be at least size 2
+			if(start == end)
+			{
+				std::cout << "Error on portfolio " << get_name() << ": attempted let_range " << start 
+						<< " - " << end << " has equal values" << std::endl;
+			}
+			else if(start > end)
+			{
+				std::cout << "Error on portfolio " << get_name() << ": attempted let_range " << start 
+						<< " - " << end << " is crossing" << std::endl;
+			}
+			else
+			{
+				// to avoid bugs with let_end and let_start (end below start etc.)
+				if(start >= m_end)
+				{
+					let_end(end);
+					let_start(start);
+				}
+				else
+				{
+					let_start(start);
+					let_end(end);
+				}
+			}
+		}
 		
 		
 		// sets range to last n months (for vol computations)
 		void hedged_ptf::let_last_range(std::size_t n, bool next)
 		{
-			let_start(m_ts.shift_months(m_ts.get_size(),static_cast<int>(n),false));
+			let_start(m_ts.shift_months(m_ts.get_size(), static_cast<int>(n), false));
 			let_end(m_ts.get_size());
 		}
 		

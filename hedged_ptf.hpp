@@ -75,12 +75,9 @@ namespace project
 			void let_div(double div);
 			
 			// modify - date range
-			// !!!!!
-			// a faire : gérer le cas où ça se croise // cas out of range
-			// !!!!!
 			void let_start(std::size_t start);
 			void let_end(std::size_t end);
-			// void let_range(std::size_t start, std::size_t end);
+			void let_range(std::size_t start, std::size_t end);
 			
 			
 			// sets range to last n months (for vol computations)
