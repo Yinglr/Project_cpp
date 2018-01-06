@@ -33,8 +33,8 @@ namespace project
 			
 			// constructors
 			vol_surface(BS::hedged_ptf& ptf,
-						std::vector<double> strikes = {50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150},
-						std::vector<double> maturities = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+						std::vector<double> maturities = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+						std::vector<double> strikes = {50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150});
 			
 			// destructor
 			~vol_surface();
@@ -83,8 +83,9 @@ namespace project
 			std::vector<double> m_strikes;
 			std::vector<double> m_maturities;
 			
-			// volatility surface
-			std::vector<double> m_vols; // vectorized 2d matrix
+			// volatility surface: vectorized 2d matrix
+			// first dimention are the strikes, second are the maturities
+			std::vector<double> m_vols;
 			
 			// hedged_ptf class from which we get the implied vols
 			BS::hedged_ptf *p_ptf;

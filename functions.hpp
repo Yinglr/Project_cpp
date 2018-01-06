@@ -16,125 +16,44 @@
 #include <tuple>
 #include <vector>
 
+
+	/* -------------------------------- */
+	/* ---- MANIPULATING STRUCT TM ---- */
+	/* -------------------------------- */
+
+// for comparing std::tm structures (eg. in iterators)
+bool operator==(const struct std::tm& lhs, const struct std::tm& rhs);
+bool operator>(struct std::tm& lhs, struct std::tm& rhs);
+bool operator<(struct std::tm& lhs, struct std::tm& rhs);
+bool operator>=(struct std::tm& lhs, struct std::tm& rhs);
+bool operator<=(struct std::tm& lhs, struct std::tm& rhs);
+
+
+// overloads for std::tm
+namespace std
+{
+	double difftime(struct std::tm& time_end, struct std::tm& time_beg);
+	double difftime(const std::string& time_end, const std::string& time_beg);
+}
+
+
+
 namespace project
 {
 	
+	
+	/* -------------------------------- */
+	/* ---- BLACK-SCHOLES FORMULAS ---- */
+	/* -------------------------------- */	
+	
 	namespace BS
 	{
-
-		
+		// returns a maturity in years using difftime overload (ACT/365 basis)
 		double maturity(struct std::tm& start, struct std::tm& end);
 		
-		
-		
-		
-		/* -------------------------------- */
-		/* ---- DELTA-HEDGED PORTFOLIO ---- */
-		/* -------------------------------- */
-		
-		// class of the delta-hedged portfolio we will manipulate
-		class hedged_ptf
-		{
-		public:
-			
-			// constructors
-			hedged_ptf(const std::string& name, std::ifstream& csv_file,
-					   double strike = 100.0, double rate = 0.0, double div = 0.0);
-			
-			// destructor
-			~hedged_ptf();
-			
-			// access - general
-			std::string get_name() const;
-			std::size_t get_size() const;
-			std::size_t get_size_range() const; // between start and end
-
-			
-			// access - values
-			double get_spot() const;
-			double get_maturity() const;
-			double get_strike() const;
-			double get_rate() const;
-			double get_div() const;
-			
-			// access - time_series
-			const TS::time_series& get_ts() const;
-			
-			// access - date range
-			std::size_t get_start() const;
-			std::size_t get_end() const;
-			
-			
-			// printing
-			void print_info() const;
-			// void print_range() const;
-			
-			
-			
-			// modify - general
-			void let_name(std::string name);
-			
-			// modify - values
-			void let_strike(double strike, bool percent = true);
-			void let_rate(double rate);
-			void let_div(double div);
-			
-			// modify - date range
-			// !!!!!
-			// a faire : gérer le cas où ça se croise // cas out of range
-			// !!!!!
-			void let_start(std::size_t start);
-			void let_end(std::size_t end);
-			// void let_range(std::size_t start, std::size_t end);
-			
-			
-			// sets range to last n months (for vol computations)
-			void let_last_range(std::size_t n, bool next = true); // uses shift_months
-			
-			
-			// P&L computations
-			double get_pnl(double vol, bool call = true) const;
-			double get_implied_vol(double precision = 1e-5, double v_low = 0.0, double v_high = 1.0) const;
-			
-			
-		private:
-			
-			// data members
-			
-			// parameters
-			double m_strike;
-			double m_rate;
-			double m_div;
-			
-			// time_series
-			TS::time_series m_ts;
-			std::size_t m_start;
-			std::size_t m_end;
-			
-			
-		};
-
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		/* -------------------------------- */
-		/* ---- BLACK-SCHOLES FORMULAS ---- */
-		/* -------------------------------- */
-		
 		// normal distribution
-		double normal_cdf(double x);
-		double normal_pdf(double x);
+		double normal_cdf(double x); // using std::erfc
+		double normal_pdf(double x); // using std::atan
 		
 		// Black-Scholes formulas
 		double price_bs(double S, double K, double T, double r, double v, bool call = true);
@@ -144,6 +63,52 @@ namespace project
 		double rho_bs(double S, double K, double T, double r, double v, bool call = true);
 		double theta_bs(double S, double K, double T, double r, double v, bool call = true);
 
+	}
+	
+	
+	
+	
+	/* ---------------------------------- */
+	/* ---- MANIPULATING TIME SERIES ---- */
+	/* ---------------------------------- */
+	
+	namespace TS
+	{
+		// string to std::tm
+		struct std::tm to_date(const std::string& strdate);
+		
+		// convert a difftime (which is in seconds)
+		double difftime_to_days(double difftime);
+		double difftime_to_years(double difftime); // basis ACT/365
+		
+		// std::tm to string / for printing struct std::tm
+		std::string to_string(struct std::tm tm);
+	}
+	
+	
+	
+	
+	/* -------------------------------- */
+	/* ---- MANIPULATING CSV FILES ---- */
+	/* -------------------------------- */
+	
+	// CSV FILES
+	namespace csv
+	{
+		// checks if the file is open (used in all functions using csv)
+		void is_open(std::ifstream& csv_file);
+		
+		// comes back to the beginning of the csv file (after an interation)
+		void reset(std::ifstream& csv_file);
+		
+		// returns the number of lines in the file
+		std::size_t count_lines(std::ifstream& csv_file);
+		
+		// prints the whole csv file
+		void print_csv(std::ifstream& csv_file);
+
+		// prints only the requested line from the csv file
+		void print_line(std::ifstream& csv_file, std::size_t line); 
 	}
 
 }

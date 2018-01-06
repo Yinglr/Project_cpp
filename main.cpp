@@ -1,30 +1,34 @@
-#include "bilu.hpp"
-#include "functions.hpp"
+#include "time_series.hpp"
+#include "hedged_ptf.hpp"
 #include "vol_surface.hpp"
+#include "functions.hpp"
 
 std::vector<double> vol_skew(project::BS::hedged_ptf& ptf, const std::vector<double>& strikes);
 
 int main(int argc, char* argv[])
 {
     
-	
-	// time series object
+	// 1. open the datafile
 	std::ifstream data_file("../data.csv", std::ios_base::in);
+	
+	// 2. create a hedged_ptf instance using the datafile
 	project::BS::hedged_ptf ptf("S&P", data_file);
 	data_file.close();
 	
-	
-	ptf.let_last_range(12);
-	// ptf.let_rate(0.01);
+	// 3. setting the ptf + printing infos
+	ptf.let_rate(0.01);
 	ptf.print_info();
 	
-	
-	project::VS::vol_surface vs(ptf);
+	// 4. create a vol_surface instance pointing on ptf
+	project::VS::vol_surface vs(ptf, std::vector<double> {12});
 
+	// 5. computes the whole volatility surface
 	vs.load_vol_surface();
 	vs.print_vol_surface();
 	
-	vs.export_to_csv();
+	// 6. export the results to .csv file
+	vs.export_to_csv(/* optional path */);
+	
 	
 	/* ptf.let_start(12);
 	ptf.let_end(264);
@@ -75,4 +79,3 @@ std::vector<double> vol_skew(project::BS::hedged_ptf& ptf, const std::vector<dou
 	}
 	return skew;
 }
-

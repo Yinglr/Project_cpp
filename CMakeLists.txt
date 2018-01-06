@@ -22,9 +22,10 @@ endif()
 
 set(STL_SRCS
     main.cpp
-	bilu.cpp
-	functions.cpp
-	vol_surface.cpp)
+	time_series.cpp
+	hedged_ptf.cpp
+	vol_surface.cpp
+	functions.cpp)
 
 set(STL_TARGET project_cpp)
 add_executable(${STL_TARGET} ${STL_SRCS})

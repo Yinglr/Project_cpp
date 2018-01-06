@@ -1,5 +1,5 @@
-#ifndef DATA_STRUCTURE_HPP
-#define DATA_STRUCTURE_HPP
+#ifndef TIME_SERIES_HPP
+#define TIME_SERIES_HPP
 
 // libs of the project
 
@@ -16,26 +16,6 @@
 #include <tuple>
 #include <vector>
 
-	/* -------------------------------- */
-	/* ---- MANIPULATING STRUCT TM ---- */
-	/* -------------------------------- */
-
-// for comparing times in iterators
-bool operator==(const struct std::tm& lhs, const struct std::tm& rhs);
-bool operator>(struct std::tm& lhs, struct std::tm& rhs);
-bool operator<(struct std::tm& lhs, struct std::tm& rhs);
-bool operator>=(struct std::tm& lhs, struct std::tm& rhs);
-bool operator<=(struct std::tm& lhs, struct std::tm& rhs);
-
-// overloads for std::tm
-namespace std
-{
-	double difftime(struct std::tm& time_end, struct std::tm& time_beg);
-	double difftime(const std::string& time_end, const std::string& time_beg);
-}
-
-
-
 namespace project
 {
 	
@@ -46,27 +26,14 @@ namespace project
 	// TIMES SERIES
 	namespace TS
 	{
-		struct std::tm to_date(const std::string& strdate);
-		
-		// convert a difftime 
-		double difftime_to_days(double difftime);
-		double difftime_to_years(double difftime); // base ACT/365
-		
-		// for printing struct std::tm
-		std::string to_string(struct std::tm tm);
-		
-		
-		
-		
-		
 		
 		class time_series
 		{
 		public:
 		
 			// constructors
-			time_series(const std::string& name, std::size_t size);
-			time_series(const std::string& name, std::ifstream& csv_file);
+			time_series(const std::string& name, std::size_t size); // without loading the data
+			time_series(const std::string& name, std::ifstream& csv_file); // directly from a csv file
 			
 			// destructor
 			~time_series();
@@ -88,10 +55,13 @@ namespace project
 			double operator[](std::string date) const;
 			double operator[](struct std::tm date) const;
 			
+			// access - index
 			std::size_t get_index(std::string date) const;
 			std::size_t get_index(struct std::tm tm) const;
 			
+			// acces - dates
 			struct std::tm get_date(std::size_t line) const;
+			
 			
 			// returns the closest value (next value / previous value)
 			std::size_t approx_index(std::string date, bool next = true) const;
@@ -115,9 +85,6 @@ namespace project
 			
 			
 			
-			
-
-			
 			// printing info
 			void print_line(std::size_t line) const;
 			void print_data() const;
@@ -133,8 +100,10 @@ namespace project
 			std::vector<struct std::tm> m_dates;
 			std::vector<double> m_values;
 			
+			
 			// check line
 			bool is_line(std::size_t line) const;
+			
 		};
 		
 	}
@@ -142,23 +111,7 @@ namespace project
 	
 	
 	
-	/* -------------------------------- */
-	/* ---- MANIPULATING CSV FILES ---- */
-	/* -------------------------------- */
 	
-	// CSV FILES
-	namespace csv
-	{
-		bool is_open(std::ifstream& csv_file);
-		void reset(std::ifstream& csv_file);
-		
-		
-		std::size_t count_lines(std::ifstream& csv_file);
-		
-		
-		void print_csv(std::ifstream& csv_file);
-		void print_line(std::ifstream& csv_file, std::size_t line);
-	}
 
 }
 

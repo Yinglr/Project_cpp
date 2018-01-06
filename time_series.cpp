@@ -1,57 +1,7 @@
-#include "bilu.hpp"
-#include "functions.hpp"
+#include "time_series.hpp"
+#include "hedged_ptf.hpp"
 #include "vol_surface.hpp"
-
-	/* -------------------------------- */
-	/* ---- MANIPULATING STRUCT TM ---- */
-	/* -------------------------------- */
-
-// for comparing times in iterators
-bool operator==(const struct std::tm& lhs, const struct std::tm& rhs)
-{
-	return std::tie(lhs.tm_year, lhs.tm_mon, lhs.tm_mday) ==
-		   std::tie(rhs.tm_year, rhs.tm_mon, rhs.tm_mday);
-}
-
-bool operator>(struct std::tm& lhs, struct std::tm& rhs)
-{
-	return (std::difftime(lhs, rhs) > 0);
-}
-
-bool operator<(struct std::tm& lhs, struct std::tm& rhs)
-{
-	return (std::difftime(lhs, rhs) < 0);
-}
-
-bool operator>=(struct std::tm& lhs, struct std::tm& rhs)
-{
-	return ((lhs == rhs) | (lhs > rhs));
-}
-
-bool operator<=(struct std::tm& lhs, struct std::tm& rhs)
-{
-	return ((lhs == rhs) | (lhs < rhs));
-}
-
-
-// overloads for std::tm
-namespace std
-{
-	double difftime(struct std::tm& time_end, struct std::tm& time_beg)
-	{
-		return difftime(std::mktime(&time_end), std::mktime(&time_beg));
-	}
-	
-	double difftime(const std::string& time_end, const std::string& time_beg)
-	{
-		return difftime(project::TS::to_date(time_end), project::TS::to_date(time_beg));
-	}
-}
-
-
-
-
-
+#include "functions.hpp"
 
 namespace project
 {
@@ -62,56 +12,35 @@ namespace project
 	
 	namespace TS
 	{
-		// string to date function
-		struct std::tm to_date(const std::string& strdate)
-		{
-			struct std::tm dt;
-			std::istringstream datestream(strdate);
-			datestream >> std::get_time(&dt, "%d/%m/%Y");
-			// necessary sets to zero so mktime works
-			dt.tm_sec = 0;
-			dt.tm_min = 0;
-			dt.tm_hour = 0;
-			return dt;
-		}
-		
-		
-		
-		// convert a difftime 
-		double difftime_to_days(double difftime)
-		{
-			return difftime / 3600 / 24;
-		}
-		
-		double difftime_to_years(double difftime)
-		{
-			return difftime / 3600 / 24 / 365;
-		}
-		
-		
-		
-		// for printing struct std::tm
-		std::string to_string(struct std::tm tm)
-		{
-			std::ostringstream stream;
-			stream << std::put_time(&tm, "%d/%m/%Y");
-			return stream.str();
-		}
 
-		
-		
 		// constructors
+		// without loading the data
 		time_series::time_series(const std::string& name, std::size_t size)
 			: m_name(name), m_dates(size), m_values(size)
 		{}
 		
+		// directly from a csv file
 		time_series::time_series(const std::string& name, std::ifstream& csv_file)
 			: m_name(name)
 		{
-			std::size_t size = csv::count_lines(csv_file);
-			m_dates.resize(size); 
-			m_values.resize(size);
-			load_from_csv(csv_file);
+			try
+			{
+				csv::is_open(csv_file); // tries if the file is open
+				
+				// resize vectors
+				std::size_t size = csv::count_lines(csv_file);
+				m_dates.resize(size); 
+				m_values.resize(size);
+				
+				// loads the data from the file
+				load_from_csv(csv_file);
+			}
+			catch(const char* msg)
+			{
+				// error messages
+				std::cerr << msg << std::endl;
+				std::cout << "Error: time_series object " << m_name << " was not initialized" << std::endl;
+			}
 		}
 		
 		//destructor
@@ -123,8 +52,10 @@ namespace project
 		// import data
 		void time_series::load_from_csv(std::ifstream& csv_file)
 		{
-			if(csv::is_open(csv_file))
+			try
 			{
+				csv::is_open(csv_file); // tries if the file is open
+				
 				std::size_t csv_size = csv::count_lines(csv_file);
 				if(get_size() != csv_size)
 				{
@@ -138,23 +69,39 @@ namespace project
 					
 					while(csv_file.good())
 					{
-						std::getline(csv_file, date, ';');
-						std::getline(csv_file, value, '\n');
+						std::getline(csv_file, date, ';'); // get the date
+						std::getline(csv_file, value, '\n'); // get the value
 						if(!date.empty())
 						{
 							// storing the date
-							if(i==0) // first date has some additionnal characters
+							if(i == 0) // first date has some additionnal characters (pb of .csv file)
 								date = date.substr(3);
 							
 							m_dates[i] = to_date(date);
+							
 							// storing the value
 							m_values[i] = std::atof(value.c_str());
 							i++;
 						}
 					}
-					csv::reset(csv_file);
+					
+					// reset the file
+					try
+					{
+						csv::reset(csv_file);
+					}
+					catch(const char* msg)
+					{
+						std::cerr << msg << std::endl;
+					}
+				
 					std::cout << "Data successfully loaded into time_series object " << m_name << std::endl;
 				}
+			}
+			catch(const char* msg)
+			{
+				std::cerr << msg << std::endl;
+				std::cout << "Error: data not loaded in time_series object " << m_name << std::endl;
 			}
 		}
 		
@@ -171,12 +118,12 @@ namespace project
 		
 		struct std::tm time_series::date_start() const
 		{
-			return m_dates[0];
+			return m_dates[0]; // returns the first date
 		}
 		
 		struct std::tm time_series::date_end() const
 		{
-			return m_dates[get_size()-1];
+			return m_dates[get_size()-1]; // returns the last date
 		}
 		
 		
@@ -209,7 +156,7 @@ namespace project
 			}
 		}
 		
-		// by date as a tm
+		// by date as a std::tm
 		double time_series::operator[](struct std::tm date) const
 		{
 			std::size_t line(get_index(date));
@@ -224,7 +171,7 @@ namespace project
 		}
 		
 		
-		
+		// access - index
 		std::size_t time_series::get_index(std::string date) const
 		{
 			return get_index(to_date(date));
@@ -234,7 +181,7 @@ namespace project
 		{
 			auto pos = std::find(m_dates.cbegin(), m_dates.cend(), tm);
 			std::size_t index = std::distance(m_dates.cbegin(), pos) + 1;
-			if(is_line(index))
+			if(is_line(index)) // if not means we didn't find
 			{
 				return index;
 			}
@@ -246,7 +193,7 @@ namespace project
 		} 
 		
 		
-		
+		// acces - dates
 		struct std::tm time_series::get_date(std::size_t line) const
 		{
 			if(is_line(line))
@@ -305,6 +252,7 @@ namespace project
 		
 		std::size_t time_series::shift_months(struct std::tm tm, int n, bool after, bool next) const
 		{
+			// if we want the date after then we will do +n otherwise -n
 			int incr = after ? 1 : -1;
 			tm.tm_mon += n * incr;
 			return approx_index(tm, next);
@@ -323,6 +271,7 @@ namespace project
 		
 		std::size_t time_series::shift_days(struct std::tm tm, int n, bool after, bool next) const
 		{
+			// if we want the date after then we will do +n otherwise -n
 			int incr = after ? 1 : -1;
 			tm.tm_mday += n * incr;
 			return approx_index(tm, next);
@@ -356,7 +305,7 @@ namespace project
 		
 		void time_series::print_data() const
 		{
-			for(std::size_t i=1;i<=get_size();++i)
+			for(std::size_t i = 1; i <= get_size(); ++i)
 				print_line(i);
 		}
 		
@@ -384,7 +333,7 @@ namespace project
 		
 		
 		
-		// check line
+		// check line (kind of exception management)
 		bool time_series::is_line(std::size_t line) const
 		{
 			if((line > get_size()) || (line <= 0))
@@ -402,90 +351,7 @@ namespace project
 	
 	
 	
-	/* -------------------------------- */
-	/* ---- MANIPULATING CSV FILES ---- */
-	/* -------------------------------- */
 	
-	namespace csv
-	{
-		// checks if the file is open (used in all functions using csv)
-		bool is_open(std::ifstream& csv_file)
-		{
-			if(!csv_file.is_open())
-			{
-				std::cout << "Error: argument file not open" << std::endl;
-				return false;
-			}
-			else
-			{
-				return true;
-			}
-		}
-		
-		// comes back to the beginning of the csv file (after an interation)
-		void reset(std::ifstream& csv_file)
-		{
-			if(is_open(csv_file))
-			{
-				csv_file.clear();
-				csv_file.seekg(0, std::ios::beg);
-			}
-		}
-		
-		// returns the number of lines
-		std::size_t count_lines(std::ifstream& csv_file)
-		{
-			if(is_open(csv_file))
-			{
-				csv_file.unsetf(std::ios_base::skipws);
-				std::size_t nb_lines = std::count(std::istream_iterator<char>(csv_file), std::istream_iterator<char>(), '\n');
-				csv_file.setf(std::ios_base::skipws);
-				reset(csv_file);
-				return nb_lines;
-			}
-			else
-			{
-				return 0;
-			}
-		}
-		
-		// prints the whole csv file
-		void print_csv(std::ifstream& csv_file)
-		{
-			if(is_open(csv_file))
-			{
-				std::string text;
-				std::size_t i = 0;
-				
-				std::cout << "Content of the CSV file:" << std::endl;
-				while(csv_file.good())
-				{
-					std::getline(csv_file, text, '\n');
-					if(!text.empty())
-						std::cout << ++i << " - " << text << std::endl;
-				}
-				reset(csv_file);
-			}
-		}
-		
-		// prints only the requested line from the csv file
-		void print_line(std::ifstream& csv_file, std::size_t line)
-		{
-			if(is_open(csv_file))
-			{
-				std::string text;
-				std::size_t i = 0;
-				while(csv_file.good() && (i++ < line))
-					std::getline(csv_file, text, '\n');
-				
-				if(line==1) // first date has some additionnal characters
-					text = text.substr(3);
-				
-				std::cout << line << " - " << text << std::endl;
-				reset(csv_file);
-			}
-		}
-	}
 
 }
 
