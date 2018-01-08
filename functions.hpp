@@ -58,8 +58,8 @@ namespace project
 		// Black-Scholes formulas
 		double price_bs(double S, double K, double T, double r, double v, bool call = true);
 		double delta_bs(double S, double K, double T, double r, double v, bool call = true);
-		double gamma_bs(double S, double K, double T, double r, double v);
-		double vega_bs(double S, double K, double T, double r, double v);
+		double gamma_bs(double S, double K, double T, double r, double v, bool call = true);
+		double vega_bs(double S, double K, double T, double r, double v, bool call = true);
 		double rho_bs(double S, double K, double T, double r, double v, bool call = true);
 		double theta_bs(double S, double K, double T, double r, double v, bool call = true);
 

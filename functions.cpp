@@ -110,14 +110,14 @@ namespace project
 		}
 
 		// Black-Scholes Gamma
-		double gamma_bs(double S, double K, double T, double r, double v)
+		double gamma_bs(double S, double K, double T, double r, double v, bool call)
 		{
 			double d = (std::log(S / K) + T * (r + 0.5 * v * v)) / (v * std::sqrt(T));
 			return normal_pdf(d) / S / v / std::sqrt(T);
 		}
 
 		// Black-Scholes Vega
-		double vega_bs(double S, double K, double T, double r, double v)
+		double vega_bs(double S, double K, double T, double r, double v, bool call)
 		{
 			double d = (std::log(S / K) + T * (r + 0.5 * v * v)) / (v * std::sqrt(T));
 			return S * normal_pdf(d) * std::sqrt(T);

@@ -3,7 +3,18 @@
 #include "vol_surface.hpp"
 #include "functions.hpp"
 
-std::vector<double> vol_skew(project::BS::hedged_ptf& ptf, const std::vector<double>& strikes);
+
+void print_diff(const std::vector<double>& v1, const std::vector<double>& v2)
+{
+	std::cout.setf(std::ios::fixed, std::ios::floatfield);
+	for(std::size_t i = 0; i < v1.size(); ++i)
+	{
+		std::cout << std::setfill('0') << std::setw(2) << i+1 << " - ";
+		std::cout << std::setprecision(4) << v1[i] - v2[i] << std::endl;
+	}
+	std::cout.unsetf(std::ios::floatfield);
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -16,71 +27,32 @@ int main(int argc, char* argv[])
 	data_file.close();
 	
 	// 3. setting the ptf + printing infos
-	ptf.let_rate(0.00);
+	ptf.let_rate(0.01);
 	ptf.print_info();
 	
 	// 4. create a vol_surface instance pointing on ptf
 	project::VS::vol_surface vs(ptf);
+	project::VS::vol_surface vs_robust(ptf);
+	
+	// this line is for comparison with quoted skew
+	// project::VS::vol_surface vs(ptf,std::vector<double> {12},std::vector<double> {30,40,60,80,90,95,97.5,100,102.5,105,110,120,150,200,300});
 
+	
 	// 5. computes the whole volatility surface
-	vs.load_vol_surface();
+	vs.load_vol_surface(false); // delta hedging method
+	vs_robust.load_vol_surface(true); // gamma pnl method
+	
+	// 6. printing our results
 	vs.print_vol_surface();
+	vs_robust.print_vol_surface();
 	
-	vs.print_maturity(12); 
+	// 7. export the results to .csv file
+	vs.export_to_csv(/* optional path */);
+	vs_robust.export_to_csv(/* optional path */);
 	
-	// 6. export the results to .csv file
-	// vs.export_to_csv(/* optional path */);
-	
-	
-	/* ptf.let_start(12);
-	ptf.let_end(264);
-	ptf.let_strike(ptf.get_ts()[12]);
-	ptf.let_rate(0.01); */
-	
-	//ptf.print_info();
-	//std::cout << ptf.get_maturity() << std::endl;
-	/* for (int i=0; i<51;i++)
-	{
-		double vol=i*(0.2-0.05)/50+0.05;
-		std::cout.precision(4);
-		std::cout << "Vol: " << vol << ", PnL: "<< ptf.get_pnl(vol) << std::endl;
-	} */
-	
-	/* for (double k=40; k<100; k=k+1)
-	{
-		ptf.let_strike(k*ptf.get_ts()[12]/100.0);
-		std::cout << "The implied-vol for strike " << ptf.get_strike() << " is: " << ptf.get_vol(0.0001) << std::endl;
-	} */
-	//ptf.let_strike(100.0*ptf.get_ts()[12]/100.0);
-	//std::cout << "The implied-vol for strike " << ptf.get_strike() << " is: " << ptf.get_vol(0.0001) << std::endl;
-	
-	// testing for maturity 1 year
-	//ptf.let_start(ptf.get_ts().shift_months(ptf.get_ts().get_size(),12,false));
-	//ptf.let_end(ptf.get_ts().get_size());
-	//ptf.let_strike(ptf.get_ts()[12]);
-	ptf.let_last_range(12);
-	ptf.let_rate(0.01);
-	ptf.print_info();
-	
-	std::vector<double> strikes = { 70.0, 80.0, 90.0, 100.0, 110.0, 120.0, 130.0, 140.0, 150.0};
-	std::vector<double> skew = vol_skew(ptf,strikes);
-	
-	for(std::size_t i = 0; i < strikes.size(); ++i)
-		std::cout << strikes[i] << " - " << skew[i] << std::endl;
+	// 8. quickly compare differences (easier in Excel with a heatmap...)
+	// print_diff(vs.get_strike(100), vs_robust.get_strike(100));
+
 	
 	return 0;
-	
-	/* ptf.let_strike(100.);
-	std::cout << ptf.get_implied_vol2() << std::endl; */
-}
-
-std::vector<double> vol_skew(project::BS::hedged_ptf& ptf, const std::vector<double>& strikes)
-{
-	std::vector<double> skew(strikes.size());
-	for(std::size_t i = 0; i < strikes.size(); ++i)
-	{
-		ptf.let_strike(strikes[i]);
-		skew[i] = ptf.get_implied_vol2();
-	}
-	return skew;
 }
