@@ -44,7 +44,7 @@ namespace project
 			std::string get_name() const; // from the pointed ptf
 			const std::vector<double>& get_strikes() const;
 			const std::vector<double>& get_maturities() const;
-			
+
 			
 			// access - volatilities
 			double get_vol(double strike, double maturity) const;
@@ -61,10 +61,11 @@ namespace project
 			void print_strike(double strike) const; // term structure
 			void print_maturity(double maturity) const; // skew
 			void print_vol_surface() const;
+			void print_current_method() const; // current pnl computation method
 			
 			
 			// modify
-			void load_vol_surface(); // loops with ptf.get_implied_vol()
+			void load_vol_surface(bool robust_pnl = false); // loops with ptf.get_implied_vol()
 			
 			void let_strikes(std::vector<double> strikes = {50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150});
 			void let_maturities(std::vector<double> maturities = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
@@ -73,7 +74,8 @@ namespace project
 			
 			
 			// export
-			void export_to_csv(std::string path = "..") const; // default path is outside of build
+			void export_to_csv(std::string path = "../") const; // default path is outside of build
+			
 			
 			
 			
@@ -82,6 +84,7 @@ namespace project
 			// data members
 			std::vector<double> m_strikes;
 			std::vector<double> m_maturities;
+			bool m_robust_pnl; // method for pnl computation
 			
 			// volatility surface: vectorized 2d matrix
 			// first dimention are the strikes, second are the maturities

@@ -34,7 +34,7 @@ namespace project
 			
 			// constructors
 			hedged_ptf(const std::string& name, std::ifstream& csv_file,
-					   double strike = 100.0, double rate = 0.0, double div = 0.0);
+					   double strike = 100.0, double rate = 0.01, double div = 0.0);
 			
 			// destructor
 			~hedged_ptf();
@@ -85,11 +85,16 @@ namespace project
 			
 			
 			// P&L computations
-			double get_pnl(double vol, bool call = true) const;
-			double get_implied_vol(double precision = 1e-5, double v_low = 0.0, double v_high = 1.0) const;
-			double get_pnl2(double vol, bool call = true) const;
-			double get_implied_vol2(double precision = 1e-5, double v_low = 0.0, double v_high = 1.0,double tol=1e-10) const;
-
+			double get_pnl(double vol, bool call = true) const; // auto-financing portfolio
+			double get_delta_pnl(double vol, bool call = true) const; // only delta effect
+			double get_robust_pnl(double vol, bool call = true) const; // gamma weighted average method
+			
+			// implied vol computations
+			double get_implied_vol(bool robust_pnl = false, double tol = 1e-13, double precision = 1e-5, double v_low = 0.0, double v_high = 1.0) const;
+			double get_implied_vol_old(double precision = 1e-5, double v_low = 0.0, double v_high = 1.0) const;
+			
+			
+			
 			
 		private:
 			

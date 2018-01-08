@@ -80,7 +80,7 @@ namespace project
 							m_dates[i] = to_date(date);
 							
 							// storing the value
-							m_values[i] = std::atof(value.c_str());
+							m_values[i] = std::atof(value.c_str()); // convert string to double
 							i++;
 						}
 					}
@@ -179,6 +179,7 @@ namespace project
 		
 		std::size_t time_series::get_index(struct std::tm tm) const
 		{
+			// to use the following find algorithm, we had to implement boolean operators for std::tm
 			auto pos = std::find(m_dates.cbegin(), m_dates.cend(), tm);
 			std::size_t index = std::distance(m_dates.cbegin(), pos) + 1;
 			if(is_line(index)) // if not means we didn't find
@@ -202,6 +203,7 @@ namespace project
 			}
 			else
 			{
+				// if the requested line is out of bounds
 				std::cout << "Bad std::tm return" << std::endl;
 				struct std::tm tm = {0,0,0,0,0,0,0,0,0};
 				return tm;
@@ -231,7 +233,7 @@ namespace project
 				return 1;
 			
 			// general code
-			int incr = next ? 1 : -1;
+			int incr = next ? 1 : -1; // increment positive if we want the next closest value
 			while(get_index(tm) == 0)
 				tm.tm_mday += incr;
 			return get_index(tm);
@@ -273,7 +275,7 @@ namespace project
 		{
 			// if we want the date after then we will do +n otherwise -n
 			int incr = after ? 1 : -1;
-			tm.tm_mday += n * incr;
+			tm.tm_mday += n * incr; // same principle as for months but with days
 			return approx_index(tm, next);
 		}
 		
@@ -282,8 +284,9 @@ namespace project
 		// modify - general
 		void time_series::let_name(std::string name)
 		{
+			// let_name is used by other classes: hedged_ptf and vol_surface
 			std::cout << "time_series object " << m_name << " renamed " << name << std::endl;
-			m_name = name;
+			m_name = name; 
 		}
 		
 		
@@ -301,6 +304,7 @@ namespace project
 				std::cout << line << " - " << to_string(m_dates[line-1])
 						<< " - " << m_values[line-1] << std::endl;
 			}
+			// error message is printed through is_line if line out of bounds
 		}
 		
 		void time_series::print_data() const
@@ -309,6 +313,8 @@ namespace project
 				print_line(i);
 		}
 		
+		
+		// general info on the class
 		void time_series::print_info() const
 		{
 			std::cout << std::endl;
@@ -316,10 +322,13 @@ namespace project
 			std::cout << "General info on time_series object " << m_name << std::endl;
 			std::cout << "----------------------------------" << std::endl;
 			std::cout << "Number of elements: " << get_size() << std::endl;
+			// min max dates
 			std::cout << "Date range: " << to_string(date_start()) << " - "
 						<< to_string(date_end()) << std::endl;
+			// min max values
 			std::cout << "Values range: " << *std::min_element(m_values.cbegin(), m_values.cend()) << " - "
 						<< *std::max_element(m_values.cbegin(), m_values.cend()) << std::endl;
+			// average value
 			std::cout << "Values average: " << std::accumulate(m_values.cbegin(), m_values.cend(), 0.0) / get_size() << std::endl;
 			std::cout << "----------------------------------" << std::endl;
 			std::cout << std::endl;
@@ -334,6 +343,7 @@ namespace project
 		
 		
 		// check line (kind of exception management)
+		// could have been done with throwing exceptions...
 		bool time_series::is_line(std::size_t line) const
 		{
 			if((line > get_size()) || (line <= 0))
